@@ -13,17 +13,20 @@
   });
 </script>
 
-<div class="app">
-  <div class="container">
-    <canvas id="webgl-canvas" width="800" height="800" />
-  </div>
+<div id="app">
+  <canvas id="webgl-canvas" width="500" height="500" />
 </div>
 
 <style>
-  .container {
+  #app {
     display: flex;
-    min-height: 100vh;
+    width: 100%;
+    height: 100vh;
     justify-content: center;
     align-items: center;
+  }
+  #webgl-canvas {
+    width: 800;
+    height: 800;
   }
 </style>

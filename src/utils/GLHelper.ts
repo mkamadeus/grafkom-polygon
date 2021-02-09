@@ -3,6 +3,8 @@ export default class GLHelper {
   private shaderProgram!: WebGLProgram;
   private vertexShader!: WebGLShader;
   private fragmentShader!: WebGLShader;
+  private attribLocations!: { [key: string]: number };
+  private uniformLocations!: { [key: string]: WebGLUniformLocation };
 
   constructor(
     canvasElement: HTMLCanvasElement,
@@ -14,10 +16,22 @@ export default class GLHelper {
     // Verify WebGL Availability
     if (!this.gl) alert("WebGL not supported in your machine/browser.");
 
+    this.setup(vertexShaderSource, fragmentShaderSource);
+    // this.createSquare();
+  }
+
+  /**
+   *
+   * @param vertexShaderSource Vertex shader string
+   * @param fragmentShaderSource Fragment shader string
+   */
+  public setup(vertexShaderSource: string, fragmentShaderSource: string) {
     this.setupShaders(vertexShaderSource, fragmentShaderSource);
     this.setupProgram();
-    this.createSquare();
-    console.log("csacasasc");
+    this.setupDraw();
+    console.log("done");
+    this.drawRectangle(0.5, 0.5, 0.1, 0.1);
+    console.log("drawn");
   }
 
   /**
@@ -84,46 +98,97 @@ export default class GLHelper {
     }
   }
 
-  public createSquare() {
-    const positionAttributeLocation = this.gl.getAttribLocation(
-      this.shaderProgram,
-      "a_position"
-    );
+  public setupDraw() {
+    // Setup attribute and uniform locations
+    this.attribLocations = {
+      vertexPosition: this.gl.getAttribLocation(
+        this.shaderProgram,
+        "aVertexPosition"
+      ),
+    };
+    this.uniformLocations = {
+      projectionMatrix: this.gl.getUniformLocation(
+        this.shaderProgram,
+        "uProjectionMatrix"
+      )!,
+      modelViewMatrix: this.gl.getUniformLocation(
+        this.shaderProgram,
+        "uModelViewMatrix"
+      )!,
+    };
 
-    // Create buffer for storing vertices
     const positionBuffer = this.gl.createBuffer();
-
-    // Create binding point
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
-
-    // Define three 2D points, bind via the binding point
-    const positions = [0, 0, 0, 0.5, 0.7, 0];
     this.gl.bufferData(
       this.gl.ARRAY_BUFFER,
-      new Float32Array(positions),
+      new Float32Array([0, 0, 0, 0.5, 0.7, 0]),
       this.gl.STATIC_DRAW
     );
 
-    this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
-    // Set background color to black
-    this.gl.clearColor(0, 0, 0, 0);
+    // this.resizeCanvas();
+
+    // this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
+    this.gl.clearColor(0, 0, 0, 1);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+
     this.gl.useProgram(this.shaderProgram);
-    this.gl.enableVertexAttribArray(positionAttributeLocation);
 
-    const iterationSize = 2;
-    const dataType = this.gl.FLOAT;
-    const normalize = false;
-
+    this.gl.enableVertexAttribArray(this.attribLocations["vertexPosition"]);
     this.gl.vertexAttribPointer(
-      positionAttributeLocation,
-      iterationSize,
-      dataType,
-      normalize,
+      this.attribLocations["vertexPosition"],
+      2,
+      this.gl.FLOAT,
+      false,
       0,
       0
     );
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
 
-    this.gl.drawArrays(this.gl.TRIANGLES, 0, 3);
+    // this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
+
+    // this.gl.uniform2f(
+    //   this.uniformLocations["modelViewMatrix"],
+    //   this.gl.canvas.width,
+    //   this.gl.canvas.height
+    // );
+    this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
+  }
+
+  public resizeCanvas(multiplier: number = 1) {
+    const canvas = this.gl.canvas as HTMLCanvasElement;
+    const width = window.innerWidth * multiplier;
+    const height = window.innerHeight * multiplier;
+
+    if (canvas.height !== height || canvas.width !== width) {
+      canvas.height = height;
+      canvas.width = width;
+      return true;
+    }
+
+    return false;
+  }
+
+  public drawRectangle(x: number, y: number, w: number, h: number) {
+    const x1 = x,
+      y1 = y;
+    const x2 = x + w,
+      y2 = y + h;
+    this.gl.bufferData(
+      this.gl.ARRAY_BUFFER,
+      new Float32Array([x1, y1, x2, y1, x1, y2, x1, y2, x2, y1, x2, y2]),
+      this.gl.STATIC_DRAW
+    );
+    const colorUniformLocation = this.gl.getUniformLocation(
+      this.shaderProgram,
+      "u_color"
+    );
+    this.gl.uniform4f(
+      colorUniformLocation,
+      Math.random(),
+      Math.random(),
+      Math.random(),
+      1
+    );
+    this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
   }
 }
