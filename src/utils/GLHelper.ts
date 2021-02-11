@@ -1,4 +1,7 @@
+import { Vertex2D, Vertex2DArray } from "../models/GLModel";
+
 export default class GLHelper {
+  private canvas!: HTMLCanvasElement;
   private gl!: WebGLRenderingContext;
   private shaderProgram!: WebGLProgram;
   private vertexShader!: WebGLShader;
@@ -11,7 +14,10 @@ export default class GLHelper {
     vertexShaderSource: string,
     fragmentShaderSource: string
   ) {
-    this.gl = canvasElement.getContext("webgl") as WebGLRenderingContext;
+    this.canvas = canvasElement;
+    this.gl = this.canvas.getContext("webgl", {
+      preserveDrawingBuffer: true,
+    }) as WebGLRenderingContext;
 
     // Verify WebGL Availability
     if (!this.gl) alert("WebGL not supported in your machine/browser.");
@@ -29,9 +35,9 @@ export default class GLHelper {
     this.setupShaders(vertexShaderSource, fragmentShaderSource);
     this.setupProgram();
     this.setupDraw();
-    console.log("done");
-    this.drawRectangle(0.5, 0.5, 0.1, 0.1);
-    console.log("drawn");
+    console.log("🌵 Setup done");
+
+    console.log("🌵 Drawing done");
   }
 
   /**
@@ -98,8 +104,11 @@ export default class GLHelper {
     }
   }
 
+  /**
+   * Setup references and canvas before drawing.
+   */
   public setupDraw() {
-    // Setup attribute and uniform locations
+    // Setup attribute and uniform locations for future reference
     this.attribLocations = {
       vertexPosition: this.gl.getAttribLocation(
         this.shaderProgram,
@@ -117,23 +126,58 @@ export default class GLHelper {
       )!,
     };
 
+    // Set viewport and background color
+    this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+    this.gl.clearColor(0, 0, 0, 1);
+    this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+
+    // Use the shader program
+    this.gl.useProgram(this.shaderProgram);
+
+    // Enable attribute location to be referenced as a vertex array.
+    this.gl.enableVertexAttribArray(this.attribLocations["vertexPosition"]);
+  }
+
+  public drawRectangle(x1: number, y1: number, x2: number, y2: number) {
+    console.log("sadsd");
     const positionBuffer = this.gl.createBuffer();
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
     this.gl.bufferData(
       this.gl.ARRAY_BUFFER,
-      new Float32Array([0, 0, 0, 0.5, 0.7, 0]),
+      new Float32Array([x1, y1, x2, y1, x1, y2, x1, y2, x2, y1, x2, y2]),
       this.gl.STATIC_DRAW
     );
 
-    // this.resizeCanvas();
+    this.gl.vertexAttribPointer(
+      this.attribLocations["vertexPosition"],
+      2,
+      this.gl.FLOAT,
+      false,
+      0,
+      0
+    );
 
-    // this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
-    this.gl.clearColor(0, 0, 0, 1);
-    this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
+    this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
+  }
 
-    this.gl.useProgram(this.shaderProgram);
+  public drawTriangle(
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    x3: number,
+    y3: number
+  ) {
+    // Create position buffer for triangle
+    const positionBuffer = this.gl.createBuffer();
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
+    this.gl.bufferData(
+      this.gl.ARRAY_BUFFER,
+      new Float32Array([x1, y1, x2, y2, x3, y3]),
+      this.gl.STATIC_DRAW
+    );
 
-    this.gl.enableVertexAttribArray(this.attribLocations["vertexPosition"]);
     this.gl.vertexAttribPointer(
       this.attribLocations["vertexPosition"],
       2,
@@ -143,52 +187,67 @@ export default class GLHelper {
       0
     );
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
-
-    // this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
-
-    // this.gl.uniform2f(
-    //   this.uniformLocations["modelViewMatrix"],
-    //   this.gl.canvas.width,
-    //   this.gl.canvas.height
-    // );
-    this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
+    this.gl.drawArrays(this.gl.TRIANGLES, 0, 3);
   }
 
-  public resizeCanvas(multiplier: number = 1) {
-    const canvas = this.gl.canvas as HTMLCanvasElement;
-    const width = window.innerWidth * multiplier;
-    const height = window.innerHeight * multiplier;
+  public drawPolygon(vertices: Vertex2DArray) {
+    if (vertices.length <= 2) throw new Error("woi ngaco");
 
-    if (canvas.height !== height || canvas.width !== width) {
-      canvas.height = height;
-      canvas.width = width;
-      return true;
+    const bufferArray = [];
+    for (let i = 1; i < vertices.length - 1; i++) {
+      bufferArray.push(vertices[0].x);
+      bufferArray.push(vertices[0].y);
+      bufferArray.push(vertices[i].x);
+      bufferArray.push(vertices[i].y);
+      bufferArray.push(vertices[i + 1].x);
+      bufferArray.push(vertices[i + 1].y);
     }
 
-    return false;
-  }
+    console.log(bufferArray);
 
-  public drawRectangle(x: number, y: number, w: number, h: number) {
-    const x1 = x,
-      y1 = y;
-    const x2 = x + w,
-      y2 = y + h;
+    const positionBuffer = this.gl.createBuffer();
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
     this.gl.bufferData(
       this.gl.ARRAY_BUFFER,
-      new Float32Array([x1, y1, x2, y1, x1, y2, x1, y2, x2, y1, x2, y2]),
+      new Float32Array(bufferArray),
       this.gl.STATIC_DRAW
     );
-    const colorUniformLocation = this.gl.getUniformLocation(
-      this.shaderProgram,
-      "u_color"
+
+    this.gl.vertexAttribPointer(
+      this.attribLocations["vertexPosition"],
+      2,
+      this.gl.FLOAT,
+      false,
+      0,
+      0
     );
-    this.gl.uniform4f(
-      colorUniformLocation,
-      Math.random(),
-      Math.random(),
-      Math.random(),
-      1
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
+    this.gl.drawArrays(this.gl.TRIANGLES, 0, bufferArray.length / 2);
+  }
+
+  public drawLine(p1: Vertex2D, p2: Vertex2D) {
+    const positionBuffer = this.gl.createBuffer();
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
+    this.gl.bufferData(
+      this.gl.ARRAY_BUFFER,
+      new Float32Array([p1.x, p1.y, p2.x, p2.y]),
+      this.gl.STATIC_DRAW
     );
-    this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
+
+    this.gl.vertexAttribPointer(
+      this.attribLocations["vertexPosition"],
+      2,
+      this.gl.FLOAT,
+      false,
+      0,
+      0
+    );
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
+    this.gl.drawArrays(this.gl.LINES, 0, 2);
+  }
+
+  public clearCanvas() {
+    this.gl.clearColor(0, 0, 0, 1);
+    this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
   }
 }
