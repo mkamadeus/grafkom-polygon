@@ -1,4 +1,5 @@
-import { Vertex2D, Vertex2DArray } from "../models/GLModel";
+import { GeometryType, Vertex2D, Vertex2DArray } from "../models/GLModel";
+import { BaseGeometry, SquareGeometry } from "../utils/GLObjects";
 
 export default class GLHelper {
   private canvas!: HTMLCanvasElement;
@@ -8,6 +9,8 @@ export default class GLHelper {
   private fragmentShader!: WebGLShader;
   private attribLocations!: { [key: string]: number };
   private uniformLocations!: { [key: string]: WebGLUniformLocation };
+
+  private objects: Array<BaseGeometry> = [];
 
   constructor(
     canvasElement: HTMLCanvasElement,
@@ -37,7 +40,7 @@ export default class GLHelper {
     this.setupDraw();
     console.log("🌵 Setup done");
 
-    console.log("🌵 Drawing done");
+    // console.log("🌵 Drawing done");
   }
 
   /**
@@ -120,27 +123,60 @@ export default class GLHelper {
         this.shaderProgram,
         "uProjectionMatrix"
       )!,
-      modelViewMatrix: this.gl.getUniformLocation(
-        this.shaderProgram,
-        "uModelViewMatrix"
-      )!,
     };
+  }
 
+  public drawScene(
+    time: number,
+    cursorX: number,
+    cursorY: number,
+    tmp: BaseGeometry | null
+  ) {
     // Set viewport and background color
     this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
     this.gl.clearColor(0, 0, 0, 1);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 
-    // Use the shader program
-    this.gl.useProgram(this.shaderProgram);
+    // // Use the shader program
+    // this.gl.useProgram(this.shaderProgram);
 
-    // Enable attribute location to be referenced as a vertex array.
-    this.gl.enableVertexAttribArray(this.attribLocations["vertexPosition"]);
+    // // Enable attribute location to be referenced as a vertex array.
+    // this.gl.enableVertexAttribArray(this.attribLocations["vertexPosition"]);
+
+    const p1 = { x: 0, y: 0 };
+    const p2 = { x: cursorX, y: cursorY };
+
+    // this.drawRectangle(p1, p2);
+    // this.objects.push();
+
+    if (tmp) {
+      this.drawSquare(tmp as SquareGeometry);
+    }
+
+    for (const obj of this.objects) {
+      switch (obj.getType()) {
+        case GeometryType.SQUARE:
+          console.log("Square drawn");
+          this.drawSquare(obj as SquareGeometry);
+        default:
+          continue;
+      }
+    }
+
+    // this.drawSquare(new SquareGeometry(0, 0, 0.5));
   }
 
-  public drawRectangle(x1: number, y1: number, x2: number, y2: number) {
-    console.log("sadsd");
+  public addObject(obj: BaseGeometry) {
+    this.objects.push(obj);
+  }
+
+  public drawRectangle(p1: Vertex2D, p2: Vertex2D) {
     const positionBuffer = this.gl.createBuffer();
+    const x1 = p1.x;
+    const y1 = p1.y;
+    const x2 = p2.x;
+    const y2 = p2.y;
+
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
     this.gl.bufferData(
       this.gl.ARRAY_BUFFER,
@@ -246,8 +282,54 @@ export default class GLHelper {
     this.gl.drawArrays(this.gl.LINES, 0, 2);
   }
 
-  public clearCanvas() {
-    this.gl.clearColor(0, 0, 0, 1);
-    this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+  public drawSquare(square: SquareGeometry) {
+    this.gl.useProgram(this.shaderProgram);
+
+    const positionBuffer = this.gl.createBuffer();
+    const x1 = square.getCenter().x - 0.5 * square.getSize();
+    const y1 = square.getCenter().y - 0.5 * square.getSize();
+    const x2 = square.getCenter().x + 0.5 * square.getSize();
+    const y2 = square.getCenter().y + 0.5 * square.getSize();
+
+    // console.log(x1, y1, x2, y2);
+
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
+    this.gl.bufferData(
+      this.gl.ARRAY_BUFFER,
+      new Float32Array([x1, y1, x2, y1, x1, y2, x1, y2, x2, y1, x2, y2]),
+      this.gl.STATIC_DRAW
+    );
+    const positionLocation = this.gl.getAttribLocation(
+      this.shaderProgram,
+      "aVertexPosition"
+    );
+    this.gl.enableVertexAttribArray(positionLocation);
+    this.gl.vertexAttribPointer(
+      positionLocation,
+      2,
+      this.gl.FLOAT,
+      false,
+      0,
+      0
+    );
+
+    const projectionLocation = this.gl.getUniformLocation(
+      this.shaderProgram,
+      "uProjectionMatrix"
+    );
+    this.gl.uniformMatrix3fv(
+      projectionLocation,
+      false,
+      square.getProjectionMatrix()
+    );
+    const colorLocation = this.gl.getUniformLocation(
+      this.shaderProgram,
+      "uColor"
+    );
+    this.gl.uniform4fv(colorLocation, square.getColor());
+
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
+    this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
+    // console.log("asd");
   }
 }
