@@ -2,7 +2,7 @@ import { GeometryType, Vertex2D } from "../models/GLModel";
 import { createIdentityMatrix } from "../utils/MatrixUtils";
 
 export class BaseGeometry {
-  protected type: GeometryType = 0;
+  protected type!: GeometryType;
   protected projectionMatrix: number[];
   protected color: string;
 
@@ -78,8 +78,24 @@ export class LineGeometry extends BaseGeometry {
 
   constructor(x1: number, y1: number, x2: number, y2: number) {
     super();
-    this.type = GeometryType.SQUARE;
+    this.type = GeometryType.LINE;
     this.point1 = { x: x1, y: y1 };
     this.point2 = { x: x2, y: y2 };
+  }
+
+  public getPoint1() {
+    return this.point1;
+  }
+
+  public getPoint2() {
+    return this.point2;
+  }
+
+  public setPoint1(point: Vertex2D) {
+    this.point1 = { ...point };
+  }
+
+  public setPoint2(point: Vertex2D) {
+    this.point2 = { ...point };
   }
 }

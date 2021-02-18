@@ -5,41 +5,36 @@
   import GLHelper from "./utils/GLHelper";
   import ToolButton from "./components/ToolButton.svelte";
   import type { Vertex2D } from "./models/GLModel";
-  import { BaseGeometry, SquareGeometry } from "./utils/GLObjects";
+  import {
+    BaseGeometry,
+    LineGeometry,
+    SquareGeometry,
+  } from "./utils/GLObjects";
 
   // Define tool buttons
   const tools = ["Move", "Polygon", "Line", "Scale", "Square"];
   let toolIndex = 0;
 
-  let mouseHitPosition: Vertex2D | null = null;
-  let drawnObject: BaseGeometry | null;
+  let drawnObject: BaseGeometry | null = null;
   let currentX = 0;
   let currentY = 0;
   let isDrawing = false;
-  let color = "#000000";
+  let color = "#FFFFFF";
 
   onMount(() => {
+    // Get canvas
     const canvas = document.getElementById("webgl-canvas") as HTMLCanvasElement;
-    console.info(VertexShader);
-    console.info(FragmentShader);
-    const glHelper = new GLHelper(canvas, VertexShader, FragmentShader);
-    // canvas.addEventListener(
-    //   "click",
-    //   (event: MouseEvent) => {
-    //     const bounding = canvas.getBoundingClientRect();
-    //     const x = 2 * ((event.x - bounding.left) / bounding.width) - 1;
-    //     const y = -2 * ((event.y - bounding.top) / bounding.height) + 1;
 
-    //     if (isSelecting1) {
-    //       glHelper.drawRectangle({ x: prevX, y: prevY }, { x, y });
-    //     } else {
-    //       prevX = x;
-    //       prevY = y;
-    //     }
-    //     isSelecting1 = !isSelecting1;
-    //   },
-    //   true
-    // );
+    // Instantiate GL helper object
+    const glHelper = new GLHelper(canvas, VertexShader, FragmentShader);
+
+    // On mouse down, change is drawing status
+    canvas.addEventListener("mousedown", () => {
+      console.log("✏ Is drawing");
+      isDrawing = true;
+    });
+
+    // On mouse move, recalculate current mouse coordinate
     canvas.addEventListener("mousemove", (event: MouseEvent) => {
       const bounding = canvas.getBoundingClientRect();
       const x = 2 * ((event.x - bounding.left) / bounding.width) - 1;
@@ -48,60 +43,60 @@
       currentX = x;
       currentY = y;
 
-      // glHelper.drawLine({ x: 0, y: 0 }, { x, y });
-    });
-
-    // canvas.addEventListener("click", () => {
-    //   console.log("1");
-    //   if (tools[toolIndex] === "Square") {
-    //   }
-    // });
-    canvas.addEventListener("mousedown", () => {
-      console.log("is drawing");
-      isDrawing = true;
-    });
-    canvas.addEventListener("mousemove", () => {
-      if (tools[toolIndex] === "Square" && isDrawing) {
-        // console.log(drawnObject);
-        if (!drawnObject) {
-          console.log("Square created");
-          console.log(color);
-          drawnObject = new SquareGeometry(currentX, currentY, color);
+      // If currently is drawing...
+      if (isDrawing) {
+        // If square tool selected
+        if (tools[toolIndex] === "Square") {
+          console.log("draw sq");
+          drawnObject ??= new SquareGeometry(currentX, currentY, color);
+          const square = drawnObject as SquareGeometry;
+          square.setSize(
+            Math.max(
+              Math.abs(currentY - square.getCenter().y) * 2,
+              Math.abs(currentX - square.getCenter().x) * 2
+            )
+          );
+        } else if (tools[toolIndex] === "Line") {
+          console.log("draw line");
+          drawnObject ??= new LineGeometry(
+            currentX,
+            currentY,
+            currentX,
+            currentY
+          );
+          const line = drawnObject as LineGeometry;
+          line.setPoint2({ x: currentX, y: currentY });
         }
-        const square = drawnObject as SquareGeometry;
-        square.setSize(
-          Math.min(
-            Math.abs(currentY - square.getCenter().y) * 2,
-            Math.abs(currentX - square.getCenter().x) * 2
-          )
-        );
       }
-    });
-    canvas.addEventListener("mouseup", () => {
-      if (tools[toolIndex] === "Square" && isDrawing) {
-        console.log("not drawing");
-        isDrawing = false;
-        glHelper.addObject(drawnObject as BaseGeometry);
-        drawnObject = null;
-      }
-      // if (tools[toolIndex] === "Square") {
-      //   const square = tmpObject as SquareGeometry;
-      //   square.setSize(
-      //     Math.min(
-      //       Math.abs(currentY - square.getCenter().y),
-      //       Math.abs(currentX - square.getCenter().x)
-      //     )
-      //   );
-      // }
     });
 
-    // glHelper.drawScene(0);
+    // On mouse up, save drawn object to array
+    canvas.addEventListener("mouseup", () => {
+      if (isDrawing) {
+        console.log("✏ Stopped drawing");
+        isDrawing = false;
+        if (tools[toolIndex] === "Square") {
+          glHelper.addObject(drawnObject as BaseGeometry);
+          drawnObject = null;
+        } else if (tools[toolIndex] === "Line") {
+          glHelper.addObject(drawnObject as BaseGeometry);
+          drawnObject = null;
+        }
+      }
+    });
+
+    // Key combination events
+    document.addEventListener("keydown", (event) => {
+      if (event.ctrlKey && event.key === "z") {
+        console.log("🔙 Undo");
+        glHelper.removeNewestObject();
+      }
+    });
 
     // Request frame
     const requestAnimationFunction = (time: number) => {
-      // console.log("a");
       time *= 0.0001;
-      glHelper.drawScene(time, currentX, currentY, drawnObject);
+      drawnObject && glHelper.setDrawnObject(drawnObject);
       window.requestAnimationFrame(requestAnimationFunction);
     };
     window.requestAnimationFrame(requestAnimationFunction);
@@ -136,7 +131,10 @@
       </div>
     {/each}
     <div class="px-2">
-      <div class="w-8 h-8 rounded" style={`background-color:${color};`} />
+      <div
+        class="w-8 h-8 rounded border border-gray-400"
+        style={`background-color:${color};`}
+      />
     </div>
     <input class="p-1 rounded border border-gray-400" bind:value={color} />
   </div>
@@ -144,10 +142,3 @@
     <canvas id="webgl-canvas" width="800" height="800" />
   </div>
 </div>
-
-<style>
-  .toolbar {
-    display: flex;
-    justify-content: center;
-  }
-</style>

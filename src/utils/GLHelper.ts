@@ -1,5 +1,5 @@
 import { GeometryType, Vertex2D, Vertex2DArray } from "../models/GLModel";
-import { BaseGeometry, SquareGeometry } from "../utils/GLObjects";
+import { BaseGeometry, LineGeometry, SquareGeometry } from "../utils/GLObjects";
 
 export default class GLHelper {
   private canvas!: HTMLCanvasElement;
@@ -11,6 +11,7 @@ export default class GLHelper {
   private uniformLocations!: { [key: string]: WebGLUniformLocation };
 
   private objects: Array<BaseGeometry> = [];
+  private drawnObject: BaseGeometry | null = null;
 
   constructor(
     canvasElement: HTMLCanvasElement,
@@ -126,163 +127,179 @@ export default class GLHelper {
     };
   }
 
-  public drawScene(
-    time: number,
-    cursorX: number,
-    cursorY: number,
-    tmp: BaseGeometry | null
-  ) {
+  /**
+   * Draw scene function for the current frame.
+   */
+  public drawScene() {
     // Set viewport and background color
     this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
     this.gl.clearColor(0, 0, 0, 1);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 
-    // // Use the shader program
-    // this.gl.useProgram(this.shaderProgram);
-
-    // // Enable attribute location to be referenced as a vertex array.
-    // this.gl.enableVertexAttribArray(this.attribLocations["vertexPosition"]);
-
-    const p1 = { x: 0, y: 0 };
-    const p2 = { x: cursorX, y: cursorY };
-
-    // this.drawRectangle(p1, p2);
-    // this.objects.push();
-
-    if (tmp) {
-      this.drawSquare(tmp as SquareGeometry);
-    }
-
+    // Render objects
     for (const obj of this.objects) {
-      switch (obj.getType()) {
-        case GeometryType.SQUARE:
-          console.log("Square drawn");
-          this.drawSquare(obj as SquareGeometry);
-        default:
-          continue;
-      }
+      this.drawObject(obj);
     }
 
-    // this.drawSquare(new SquareGeometry(0, 0, 0.5));
+    // Render currently drawn object
+    this.drawnObject && this.drawObject(this.drawnObject);
   }
 
   public addObject(obj: BaseGeometry) {
     this.objects.push(obj);
   }
 
-  public drawRectangle(p1: Vertex2D, p2: Vertex2D) {
-    const positionBuffer = this.gl.createBuffer();
-    const x1 = p1.x;
-    const y1 = p1.y;
-    const x2 = p2.x;
-    const y2 = p2.y;
-
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
-    this.gl.bufferData(
-      this.gl.ARRAY_BUFFER,
-      new Float32Array([x1, y1, x2, y1, x1, y2, x1, y2, x2, y1, x2, y2]),
-      this.gl.STATIC_DRAW
-    );
-
-    this.gl.vertexAttribPointer(
-      this.attribLocations["vertexPosition"],
-      2,
-      this.gl.FLOAT,
-      false,
-      0,
-      0
-    );
-
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
-    this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
+  public removeNewestObject() {
+    this.objects.pop();
   }
 
-  public drawTriangle(
-    x1: number,
-    y1: number,
-    x2: number,
-    y2: number,
-    x3: number,
-    y3: number
-  ) {
-    // Create position buffer for triangle
-    const positionBuffer = this.gl.createBuffer();
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
-    this.gl.bufferData(
-      this.gl.ARRAY_BUFFER,
-      new Float32Array([x1, y1, x2, y2, x3, y3]),
-      this.gl.STATIC_DRAW
-    );
-
-    this.gl.vertexAttribPointer(
-      this.attribLocations["vertexPosition"],
-      2,
-      this.gl.FLOAT,
-      false,
-      0,
-      0
-    );
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
-    this.gl.drawArrays(this.gl.TRIANGLES, 0, 3);
+  public setDrawnObject(obj: BaseGeometry) {
+    this.drawnObject = obj;
   }
 
-  public drawPolygon(vertices: Vertex2DArray) {
-    if (vertices.length <= 2) throw new Error("woi ngaco");
-
-    const bufferArray = [];
-    for (let i = 1; i < vertices.length - 1; i++) {
-      bufferArray.push(vertices[0].x);
-      bufferArray.push(vertices[0].y);
-      bufferArray.push(vertices[i].x);
-      bufferArray.push(vertices[i].y);
-      bufferArray.push(vertices[i + 1].x);
-      bufferArray.push(vertices[i + 1].y);
+  public drawObject(obj: BaseGeometry) {
+    const objectType = obj.getType();
+    if (objectType === GeometryType.SQUARE) {
+      this.drawSquare(obj as SquareGeometry);
+    } else if (objectType === GeometryType.LINE) {
+      this.drawLine(obj as LineGeometry);
     }
-
-    console.log(bufferArray);
-
-    const positionBuffer = this.gl.createBuffer();
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
-    this.gl.bufferData(
-      this.gl.ARRAY_BUFFER,
-      new Float32Array(bufferArray),
-      this.gl.STATIC_DRAW
-    );
-
-    this.gl.vertexAttribPointer(
-      this.attribLocations["vertexPosition"],
-      2,
-      this.gl.FLOAT,
-      false,
-      0,
-      0
-    );
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
-    this.gl.drawArrays(this.gl.TRIANGLES, 0, bufferArray.length / 2);
+    // switch (obj.getType()) {
+    //   case GeometryType.SQUARE:
+    //     console.log("sq");
+    //   case GeometryType.LINE:
+    //     console.log("line");
+    //   default:
+    //     return;
+    // }
   }
 
-  public drawLine(p1: Vertex2D, p2: Vertex2D) {
+  // public drawRectangle(p1: Vertex2D, p2: Vertex2D) {
+  //   const positionBuffer = this.gl.createBuffer();
+  //   const x1 = p1.x;
+  //   const y1 = p1.y;
+  //   const x2 = p2.x;
+  //   const y2 = p2.y;
+
+  //   this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
+  //   this.gl.bufferData(
+  //     this.gl.ARRAY_BUFFER,
+  //     new Float32Array([x1, y1, x2, y1, x1, y2, x1, y2, x2, y1, x2, y2]),
+  //     this.gl.STATIC_DRAW
+  //   );
+
+  //   this.gl.vertexAttribPointer(
+  //     this.attribLocations["vertexPosition"],
+  //     2,
+  //     this.gl.FLOAT,
+  //     false,
+  //     0,
+  //     0
+  //   );
+
+  //   this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
+  //   this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
+  // }
+
+  // public drawTriangle(
+  //   x1: number,
+  //   y1: number,
+  //   x2: number,
+  //   y2: number,
+  //   x3: number,
+  //   y3: number
+  // ) {
+  //   // Create position buffer for triangle
+  //   const positionBuffer = this.gl.createBuffer();
+  //   this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
+  //   this.gl.bufferData(
+  //     this.gl.ARRAY_BUFFER,
+  //     new Float32Array([x1, y1, x2, y2, x3, y3]),
+  //     this.gl.STATIC_DRAW
+  //   );
+
+  //   this.gl.vertexAttribPointer(
+  //     this.attribLocations["vertexPosition"],
+  //     2,
+  //     this.gl.FLOAT,
+  //     false,
+  //     0,
+  //     0
+  //   );
+  //   this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
+  //   this.gl.drawArrays(this.gl.TRIANGLES, 0, 3);
+  // }
+
+  // public drawPolygon(vertices: Vertex2DArray) {
+  //   if (vertices.length <= 2) throw new Error("woi ngaco");
+
+  //   const bufferArray = [];
+  //   for (let i = 1; i < vertices.length - 1; i++) {
+  //     bufferArray.push(vertices[0].x);
+  //     bufferArray.push(vertices[0].y);
+  //     bufferArray.push(vertices[i].x);
+  //     bufferArray.push(vertices[i].y);
+  //     bufferArray.push(vertices[i + 1].x);
+  //     bufferArray.push(vertices[i + 1].y);
+  //   }
+
+  //   const positionBuffer = this.gl.createBuffer();
+  //   this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
+  //   this.gl.bufferData(
+  //     this.gl.ARRAY_BUFFER,
+  //     new Float32Array(bufferArray),
+  //     this.gl.STATIC_DRAW
+  //   );
+
+  //   this.gl.vertexAttribPointer(
+  //     this.attribLocations["vertexPosition"],
+  //     2,
+  //     this.gl.FLOAT,
+  //     false,
+  //     0,
+  //     0
+  //   );
+  //   this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
+  //   this.gl.drawArrays(this.gl.TRIANGLES, 0, bufferArray.length / 2);
+  // }
+
+  public drawLine(line: LineGeometry) {
+    // Setup shader program
+    this.gl.useProgram(this.shaderProgram);
+
     const positionBuffer = this.gl.createBuffer();
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
+
     this.gl.bufferData(
       this.gl.ARRAY_BUFFER,
-      new Float32Array([p1.x, p1.y, p2.x, p2.y]),
+      new Float32Array([
+        line.getPoint1().x,
+        line.getPoint1().y,
+        line.getPoint2().x,
+        line.getPoint2().y,
+      ]),
       this.gl.STATIC_DRAW
     );
 
+    const positionLocation = this.gl.getAttribLocation(
+      this.shaderProgram,
+      "aVertexPosition"
+    );
     this.gl.vertexAttribPointer(
-      this.attribLocations["vertexPosition"],
+      positionLocation,
       2,
       this.gl.FLOAT,
       false,
       0,
       0
     );
+
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
     this.gl.drawArrays(this.gl.LINES, 0, 2);
   }
 
   public drawSquare(square: SquareGeometry) {
+    // Setup shader program
     this.gl.useProgram(this.shaderProgram);
 
     const positionBuffer = this.gl.createBuffer();
@@ -291,8 +308,7 @@ export default class GLHelper {
     const x2 = square.getCenter().x + 0.5 * square.getSize();
     const y2 = square.getCenter().y + 0.5 * square.getSize();
 
-    // console.log(x1, y1, x2, y2);
-
+    // Enable vertex attribute position
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
     this.gl.bufferData(
       this.gl.ARRAY_BUFFER,
@@ -313,6 +329,7 @@ export default class GLHelper {
       0
     );
 
+    // Get projection matrix of the square
     const projectionLocation = this.gl.getUniformLocation(
       this.shaderProgram,
       "uProjectionMatrix"
@@ -322,14 +339,16 @@ export default class GLHelper {
       false,
       square.getProjectionMatrix()
     );
+
+    // Set square color
     const colorLocation = this.gl.getUniformLocation(
       this.shaderProgram,
       "uColor"
     );
     this.gl.uniform4fv(colorLocation, square.getColor());
 
+    // Bind position buffer and draw square
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
     this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
-    // console.log("asd");
   }
 }
