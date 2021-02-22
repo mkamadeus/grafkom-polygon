@@ -77,12 +77,11 @@
         isDrawing = false;
         if (tools[toolIndex] === "Square") {
           glHelper.addObject(drawnObject as BaseGeometry);
-          drawnObject = null;
         } else if (tools[toolIndex] === "Line") {
           glHelper.addObject(drawnObject as BaseGeometry);
-          drawnObject = null;
         }
       }
+      drawnObject = null;
     });
 
     // Key combination events
@@ -97,6 +96,7 @@
     const requestAnimationFunction = (time: number) => {
       time *= 0.0001;
       drawnObject && glHelper.setDrawnObject(drawnObject);
+      glHelper.drawScene();
       window.requestAnimationFrame(requestAnimationFunction);
     };
     window.requestAnimationFrame(requestAnimationFunction);

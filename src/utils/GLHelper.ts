@@ -145,18 +145,32 @@ export default class GLHelper {
     this.drawnObject && this.drawObject(this.drawnObject);
   }
 
+  /**
+   * Add object to render array
+   */
   public addObject(obj: BaseGeometry) {
     this.objects.push(obj);
   }
 
+  /**
+   * Remove latest object from the render array
+   */
   public removeNewestObject() {
     this.objects.pop();
   }
 
+  /**
+   * Set drawn object
+   * @param obj The object currently is drawn
+   */
   public setDrawnObject(obj: BaseGeometry) {
     this.drawnObject = obj;
   }
 
+  /**
+   * Render object on canvas; any geometric object in general
+   * @param obj The object that is going to be rendered
+   */
   public drawObject(obj: BaseGeometry) {
     const objectType = obj.getType();
     if (objectType === GeometryType.SQUARE) {

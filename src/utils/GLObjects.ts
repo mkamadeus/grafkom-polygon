@@ -36,6 +36,10 @@ export class BaseGeometry {
         ]
       : [1.0, 1.0, 1.0, 1.0];
   }
+
+  public convertToPoints() {
+    return;
+  }
 }
 
 export class SquareGeometry extends BaseGeometry {
@@ -70,6 +74,8 @@ export class SquareGeometry extends BaseGeometry {
   public setSize(size: number) {
     this.size = size;
   }
+
+  public convertToPoints() {}
 }
 
 export class LineGeometry extends BaseGeometry {
