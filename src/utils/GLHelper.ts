@@ -152,6 +152,10 @@ export default class GLHelper {
     this.objects.push(obj);
   }
 
+  public getObjects() {
+    return this.objects;
+  }
+
   /**
    * Remove latest object from the render array
    */
@@ -166,6 +170,22 @@ export default class GLHelper {
   public setDrawnObject(obj: BaseGeometry) {
     this.drawnObject = obj;
   }
+
+  public setColorObject(obj: BaseGeometry,color: string){
+    const objectType = obj.getType();
+    if(objectType===GeometryType.SQUARE){
+      
+      console.log(color);
+      obj.setColor(color);
+      this.drawScene();
+    }
+    else if(objectType===GeometryType.LINE){
+      console.log("helloooo");
+      obj.setColor(color);
+      this.drawScene();
+    }
+  }
+  
 
   /**
    * Render object on canvas; any geometric object in general
@@ -299,6 +319,7 @@ export default class GLHelper {
       this.shaderProgram,
       "aVertexPosition"
     );
+    this.gl.enableVertexAttribArray(positionLocation);
     this.gl.vertexAttribPointer(
       positionLocation,
       2,
@@ -307,6 +328,24 @@ export default class GLHelper {
       0,
       0
     );
+
+    // Get projection matrix of the line
+    const projectionLocation = this.gl.getUniformLocation(
+      this.shaderProgram,
+      "uProjectionMatrix"
+    );
+    this.gl.uniformMatrix3fv(
+      projectionLocation,
+      false,
+      line.getProjectionMatrix()
+    );
+
+    // Set square color
+    const colorLocation = this.gl.getUniformLocation(
+      this.shaderProgram,
+      "uColor"
+    );
+    this.gl.uniform4fv(colorLocation, line.getColor());
 
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
     this.gl.drawArrays(this.gl.LINES, 0, 2);

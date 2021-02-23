@@ -40,6 +40,10 @@ export class BaseGeometry {
   public convertToPoints() {
     return;
   }
+
+  public setColor(color:string){
+    this.color = color;
+  }
 }
 
 export class SquareGeometry extends BaseGeometry {
@@ -75,6 +79,10 @@ export class SquareGeometry extends BaseGeometry {
     this.size = size;
   }
 
+  // public setColor(color : string){
+  //   this.color = color;
+  // }
+
   public convertToPoints() {}
 }
 
@@ -82,11 +90,12 @@ export class LineGeometry extends BaseGeometry {
   private point1: Vertex2D;
   private point2: Vertex2D;
 
-  constructor(x1: number, y1: number, x2: number, y2: number) {
+  constructor(x1: number, y1: number, x2: number, y2: number, color:string) {
     super();
     this.type = GeometryType.LINE;
     this.point1 = { x: x1, y: y1 };
     this.point2 = { x: x2, y: y2 };
+    this.color =  color;
   }
 
   public getPoint1() {
