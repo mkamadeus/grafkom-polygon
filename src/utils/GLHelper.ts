@@ -1,5 +1,5 @@
 import { GeometryType, Vertex2D, Vertex2DArray } from "../models/GLModel";
-import { BaseGeometry, LineGeometry, SquareGeometry } from "../utils/GLObjects";
+import { BaseGeometry, LineGeometry, SquareGeometry, PolygonGeometry } from "../utils/GLObjects";
 
 export default class GLHelper {
   private canvas!: HTMLCanvasElement;
@@ -167,6 +167,10 @@ export default class GLHelper {
     this.drawnObject = obj;
   }
 
+  public getLastObject(){
+    return this.objects[this.objects.length - 1];
+  }
+
   /**
    * Render object on canvas; any geometric object in general
    * @param obj The object that is going to be rendered
@@ -177,6 +181,8 @@ export default class GLHelper {
       this.drawSquare(obj as SquareGeometry);
     } else if (objectType === GeometryType.LINE) {
       this.drawLine(obj as LineGeometry);
+    } else if (objectType == GeometryType.POLYGON){
+      this.drawPolygon(obj as PolygonGeometry);
     }
     // switch (obj.getType()) {
     //   case GeometryType.SQUARE:
@@ -215,34 +221,50 @@ export default class GLHelper {
   //   this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
   // }
 
-  // public drawTriangle(
-  //   x1: number,
-  //   y1: number,
-  //   x2: number,
-  //   y2: number,
-  //   x3: number,
-  //   y3: number
-  // ) {
-  //   // Create position buffer for triangle
-  //   const positionBuffer = this.gl.createBuffer();
-  //   this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
-  //   this.gl.bufferData(
-  //     this.gl.ARRAY_BUFFER,
-  //     new Float32Array([x1, y1, x2, y2, x3, y3]),
-  //     this.gl.STATIC_DRAW
-  //   );
+  public drawTriangle(
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    x3: number,
+    y3: number,
+    polygon: PolygonGeometry
+  ) {
+    this.gl.useProgram(this.shaderProgram);
+    // Create position buffer for triangle
+    const positionBuffer = this.gl.createBuffer();
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
+    this.gl.bufferData(
+      this.gl.ARRAY_BUFFER,
+      new Float32Array([x1, y1, x2, y2, x3, y3]),
+      this.gl.STATIC_DRAW
+    );
 
-  //   this.gl.vertexAttribPointer(
-  //     this.attribLocations["vertexPosition"],
-  //     2,
-  //     this.gl.FLOAT,
-  //     false,
-  //     0,
-  //     0
-  //   );
-  //   this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
-  //   this.gl.drawArrays(this.gl.TRIANGLES, 0, 3);
-  // }
+    const positionLocation = this.gl.getAttribLocation(
+      this.shaderProgram,
+      "aVertexPosition"
+    );
+    this.gl.enableVertexAttribArray(positionLocation);
+
+    this.gl.vertexAttribPointer(
+      this.attribLocations["vertexPosition"],
+      2,
+      this.gl.FLOAT,
+      false,
+      0,
+      0
+    );
+
+    // Set square color
+    const colorLocation = this.gl.getUniformLocation(
+      this.shaderProgram,
+      "uColor"
+    );
+    this.gl.uniform4fv(colorLocation, polygon.getColor());
+
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
+    this.gl.drawArrays(this.gl.TRIANGLES, 0, 3);
+  }
 
   // public drawPolygon(vertices: Vertex2DArray) {
   //   if (vertices.length <= 2) throw new Error("woi ngaco");
@@ -277,6 +299,62 @@ export default class GLHelper {
   //   this.gl.drawArrays(this.gl.TRIANGLES, 0, bufferArray.length / 2);
   // }
 
+  public drawPolygon(polygon: PolygonGeometry){
+    // Setup shader program
+    // if (polygon.getLength() == 1){
+    //   throw new Error("Masih kurang gan");
+    // }
+    
+    if (polygon.getLength() == 2){
+      this.drawLine(new LineGeometry(polygon.firstPoint.x, polygon.firstPoint.y, polygon.lastPoint.x, polygon.lastPoint.y))
+    }
+    
+    else if (polygon.getLength() >= 3){
+      for (let i = 0; i < polygon.getLength() - 1; i++) {
+        this.drawTriangle(polygon.getPoint(0).x,
+          polygon.getPoint(0).y,
+          polygon.getPoint(i).x,
+          polygon.getPoint(i).y,
+          polygon.getPoint(i+1).x,
+          polygon.getPoint(i+1).y,
+          polygon
+        )
+      }
+      
+      // this.gl.useProgram(this.shaderProgram);
+
+      // const bufferArray = [];
+      // for (let i = 0; i < polygon.getLength(); i++) {
+      //   bufferArray.push(polygon.getPoint(i).x);
+      //   bufferArray.push(polygon.getPoint(i).y);
+      // }
+  
+      // const positionBuffer = this.gl.createBuffer();
+      // this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
+      // this.gl.bufferData(
+      //   this.gl.ARRAY_BUFFER,
+      //   new Float32Array(bufferArray),
+      //   this.gl.STATIC_DRAW
+      // );
+  
+      // const positionLocation = this.gl.getAttribLocation(
+      //   this.shaderProgram,
+      //   "aVertexPosition"
+      // );
+      // this.gl.enableVertexAttribArray(positionLocation);
+      // this.gl.vertexAttribPointer(
+      //   this.attribLocations["vertexPosition"],
+      //   2,
+      //   this.gl.FLOAT,
+      //   false,
+      //   0,
+      //   0
+      // );
+      // this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
+      // this.gl.drawArrays(this.gl.TRIANGLE_FAN, 0, bufferArray.length - 1);
+    }
+  }
+
   public drawLine(line: LineGeometry) {
     // Setup shader program
     this.gl.useProgram(this.shaderProgram);
@@ -299,6 +377,7 @@ export default class GLHelper {
       this.shaderProgram,
       "aVertexPosition"
     );
+    this.gl.enableVertexAttribArray(positionLocation);
     this.gl.vertexAttribPointer(
       positionLocation,
       2,

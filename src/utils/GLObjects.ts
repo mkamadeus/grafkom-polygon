@@ -105,3 +105,42 @@ export class LineGeometry extends BaseGeometry {
     this.point2 = { ...point };
   }
 }
+
+export class PolygonGeometry extends BaseGeometry {
+  private points: Vertex2D [];
+  private length: number;
+  public firstPoint: Vertex2D;
+  public lastPoint: Vertex2D;
+
+  constructor(x1: number, y1: number, color: string = "#000000") {
+    super();
+    this.type = GeometryType.POLYGON;
+    this.color = color;
+    this.points = [];
+    this.length = 0;
+    this.firstPoint = {x: x1, y:y1};
+    this.points.push(this.firstPoint);
+    this.length += 1;
+    this.lastPoint = {x: x1, y:y1};
+    this.addPoint();
+  }
+
+  public getPoint(idx: number) {
+    return this.points[idx];
+  }
+
+  public addPoint() {
+    this.points.push(this.lastPoint);
+    this.length += 1;
+    this.firstPoint = this.lastPoint;
+  }
+
+  public setLastPoint(point: Vertex2D){
+    this.lastPoint = ({ ...point});
+    console.log(this.length);
+  }
+
+  public getLength(){
+    return this.length;
+  }
+}

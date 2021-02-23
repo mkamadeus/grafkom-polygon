@@ -1,41 +1,44 @@
 <script lang="typescript">
-  import { onMount } from "svelte";
-  import VertexShader from "./shader/SampleVertexShader.glsl";
-  import FragmentShader from "./shader/SampleFragmentShader.glsl";
-  import GLHelper from "./utils/GLHelper";
-  import ToolButton from "./components/ToolButton.svelte";
-  import type { Vertex2D } from "./models/GLModel";
+  import { onMount } from 'svelte';
+  import VertexShader from './shader/SampleVertexShader.glsl';
+  import FragmentShader from './shader/SampleFragmentShader.glsl';
+  import GLHelper from './utils/GLHelper';
+  import ToolButton from './components/ToolButton.svelte';
+  import type { Vertex2D } from './models/GLModel';
   import {
     BaseGeometry,
     LineGeometry,
     SquareGeometry,
-  } from "./utils/GLObjects";
+    PolygonGeometry,
+  } from './utils/GLObjects';
 
   // Define tool buttons
-  const tools = ["Move", "Polygon", "Line", "Scale", "Square"];
+  const tools = ['Move', 'Polygon', 'Line', 'Scale', 'Square'];
   let toolIndex = 0;
 
   let drawnObject: BaseGeometry | null = null;
   let currentX = 0;
   let currentY = 0;
   let isDrawing = false;
-  let color = "#FFFFFF";
+  let isPolygon = false;
+  let finished = true;
+  let color = '#FFFFFF';
 
   onMount(() => {
     // Get canvas
-    const canvas = document.getElementById("webgl-canvas") as HTMLCanvasElement;
+    const canvas = document.getElementById('webgl-canvas') as HTMLCanvasElement;
 
     // Instantiate GL helper object
     const glHelper = new GLHelper(canvas, VertexShader, FragmentShader);
 
     // On mouse down, change is drawing status
-    canvas.addEventListener("mousedown", () => {
-      console.log("✏ Is drawing");
+    canvas.addEventListener('mousedown', () => {
+      console.log('✏ Is drawing');
       isDrawing = true;
     });
 
     // On mouse move, recalculate current mouse coordinate
-    canvas.addEventListener("mousemove", (event: MouseEvent) => {
+    canvas.addEventListener('mousemove', (event: MouseEvent) => {
       const bounding = canvas.getBoundingClientRect();
       const x = 2 * ((event.x - bounding.left) / bounding.width) - 1;
       const y = -2 * ((event.y - bounding.top) / bounding.height) + 1;
@@ -46,8 +49,8 @@
       // If currently is drawing...
       if (isDrawing) {
         // If square tool selected
-        if (tools[toolIndex] === "Square") {
-          console.log("draw sq");
+        if (tools[toolIndex] === 'Square') {
+          console.log('draw sq');
           drawnObject ??= new SquareGeometry(currentX, currentY, color);
           const square = drawnObject as SquareGeometry;
           square.setSize(
@@ -56,8 +59,8 @@
               Math.abs(currentX - square.getCenter().x) * 2
             )
           );
-        } else if (tools[toolIndex] === "Line") {
-          console.log("draw line");
+        } else if (tools[toolIndex] === 'Line') {
+          console.log('draw line');
           drawnObject ??= new LineGeometry(
             currentX,
             currentY,
@@ -66,29 +69,52 @@
           );
           const line = drawnObject as LineGeometry;
           line.setPoint2({ x: currentX, y: currentY });
+        } else if (tools[toolIndex] == 'Polygon') {
+          if (finished == false) {
+            console.log('continue last polygon');
+            drawnObject ??= glHelper.getLastObject();
+            const polygon = drawnObject as PolygonGeometry;
+            polygon.setLastPoint({ x: currentX, y: currentY });
+          } else {
+            finished = false;
+            console.log('draw polygon');
+            drawnObject ??= new PolygonGeometry(currentX, currentY, color);
+            const polygon = drawnObject as PolygonGeometry;
+            polygon.setLastPoint({ x: currentX, y: currentY });
+          }
         }
       }
     });
 
     // On mouse up, save drawn object to array
-    canvas.addEventListener("mouseup", () => {
+    canvas.addEventListener('mouseup', () => {
       if (isDrawing) {
-        console.log("✏ Stopped drawing");
+        console.log('✏ Stopped drawing');
         isDrawing = false;
-        if (tools[toolIndex] === "Square") {
+        if (tools[toolIndex] === 'Square') {
           glHelper.addObject(drawnObject as BaseGeometry);
-        } else if (tools[toolIndex] === "Line") {
+        } else if (tools[toolIndex] === 'Line') {
           glHelper.addObject(drawnObject as BaseGeometry);
+        } else if (tools[toolIndex] == 'Polygon') {
+          glHelper.addObject(drawnObject as BaseGeometry);
+          const polygon = drawnObject as PolygonGeometry;
+          polygon.addPoint();
         }
       }
       drawnObject = null;
     });
 
     // Key combination events
-    document.addEventListener("keydown", (event) => {
-      if (event.ctrlKey && event.key === "z") {
-        console.log("🔙 Undo");
+    document.addEventListener('keydown', (event) => {
+      if (event.ctrlKey && event.key === 'z') {
+        console.log('🔙 Undo');
         glHelper.removeNewestObject();
+      }
+    });
+
+    document.addEventListener('keyup', function (e) {
+      if (e.keyCode === 13) {
+        finished = true;
       }
     });
 
