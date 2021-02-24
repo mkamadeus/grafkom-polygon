@@ -37,6 +37,10 @@ export class BaseGeometry {
       : [1.0, 1.0, 1.0, 1.0];
   }
 
+  public getColorString() {
+    return this.color;
+  }
+
   public convertToPoints() {
     return;
   }

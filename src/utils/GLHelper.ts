@@ -101,6 +101,10 @@ export default class GLHelper {
     // Link the shader program with the canvas
     this.gl.linkProgram(this.shaderProgram);
 
+    // this.gl.viewport(0,0, this.gl.canvas.width, this.gl.canvas.height)
+    // const u_resolution = this.gl.getUniformLocation(this.shaderProgram, 'u_resolution')
+    // this.gl.uniform2f(u_resolution, this.gl.canvas.width, this.gl.canvas.height)
+
     // Verify whether program linking successful
     if (!this.gl.getProgramParameter(this.shaderProgram, this.gl.LINK_STATUS)) {
       alert("Program failed to link.");
@@ -325,18 +329,13 @@ export default class GLHelper {
   //   this.gl.drawArrays(this.gl.TRIANGLES, 0, bufferArray.length / 2);
   // }
 
-  public drawPolygon(polygon: PolygonGeometry){
-    // Setup shader program
-    // if (polygon.getLength() == 1){
-    //   throw new Error("Masih kurang gan");
-    // }
-    
+  public drawPolygon(polygon: PolygonGeometry){ 
     if (polygon.getLength() == 2){
-      this.drawLine(new LineGeometry(polygon.firstPoint.x, polygon.firstPoint.y, polygon.lastPoint.x, polygon.lastPoint.y, '#ffffff'))
+      this.drawLine(new LineGeometry(polygon.firstPoint.x, polygon.firstPoint.y, polygon.lastPoint.x, polygon.lastPoint.y, polygon.getColorString()))
     }
     
     else if (polygon.getLength() >= 3){
-      this.drawLine(new LineGeometry(polygon.firstPoint.x, polygon.firstPoint.y, polygon.lastPoint.x, polygon.lastPoint.y, '#ffffff'))
+      this.drawLine(new LineGeometry(polygon.firstPoint.x, polygon.firstPoint.y, polygon.lastPoint.x, polygon.lastPoint.y, polygon.getColorString()))
       for (let i = 0; i < polygon.getLength() - 1; i++) {
         this.drawTriangle(polygon.getPoint(0).x,
           polygon.getPoint(0).y,
@@ -347,38 +346,6 @@ export default class GLHelper {
           polygon
         )
       }
-      
-      // this.gl.useProgram(this.shaderProgram);
-
-      // const bufferArray = [];
-      // for (let i = 0; i < polygon.getLength(); i++) {
-      //   bufferArray.push(polygon.getPoint(i).x);
-      //   bufferArray.push(polygon.getPoint(i).y);
-      // }
-  
-      // const positionBuffer = this.gl.createBuffer();
-      // this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
-      // this.gl.bufferData(
-      //   this.gl.ARRAY_BUFFER,
-      //   new Float32Array(bufferArray),
-      //   this.gl.STATIC_DRAW
-      // );
-  
-      // const positionLocation = this.gl.getAttribLocation(
-      //   this.shaderProgram,
-      //   "aVertexPosition"
-      // );
-      // this.gl.enableVertexAttribArray(positionLocation);
-      // this.gl.vertexAttribPointer(
-      //   this.attribLocations["vertexPosition"],
-      //   2,
-      //   this.gl.FLOAT,
-      //   false,
-      //   0,
-      //   0
-      // );
-      // this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
-      // this.gl.drawArrays(this.gl.TRIANGLE_FAN, 0, bufferArray.length - 1);
     }
   }
 

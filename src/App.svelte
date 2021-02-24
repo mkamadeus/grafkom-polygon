@@ -159,7 +159,7 @@
           line.setPoint2({ x: currentX, y: currentY });
         } else if (tools[toolIndex] == 'Polygon') {
           if (finished == false) {
-            console.log('continue last polygon');
+            console.log('continue draw last polygon');
             drawnObject ??= glHelper.getLastObject();
             const polygon = drawnObject as PolygonGeometry;
             polygon.setLastPoint({ x: currentX, y: currentY });
@@ -207,6 +207,7 @@
         finished = true;
         const polygon = glHelper.getLastObject() as PolygonGeometry;
         glHelper.deleteTemporaryObject(polygon.getLength() - 3);
+        isPolygon = false;
         alert('Berhasil membuat polygon!');
       }
     });
