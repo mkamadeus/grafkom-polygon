@@ -1,5 +1,6 @@
 import { GeometryType, Vertex2D, Vertex2DArray } from "../models/GLModel";
 import { BaseGeometry, LineGeometry, SquareGeometry, PolygonGeometry } from "../utils/GLObjects";
+import { euclideanDistance } from "../utils/MatrixUtils";
 
 export default class GLHelper {
   private canvas!: HTMLCanvasElement;
@@ -296,39 +297,6 @@ export default class GLHelper {
     this.gl.drawArrays(this.gl.TRIANGLES, 0, 3);
   }
 
-  // public drawPolygon(vertices: Vertex2DArray) {
-  //   if (vertices.length <= 2) throw new Error("woi ngaco");
-
-  //   const bufferArray = [];
-  //   for (let i = 1; i < vertices.length - 1; i++) {
-  //     bufferArray.push(vertices[0].x);
-  //     bufferArray.push(vertices[0].y);
-  //     bufferArray.push(vertices[i].x);
-  //     bufferArray.push(vertices[i].y);
-  //     bufferArray.push(vertices[i + 1].x);
-  //     bufferArray.push(vertices[i + 1].y);
-  //   }
-
-  //   const positionBuffer = this.gl.createBuffer();
-  //   this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
-  //   this.gl.bufferData(
-  //     this.gl.ARRAY_BUFFER,
-  //     new Float32Array(bufferArray),
-  //     this.gl.STATIC_DRAW
-  //   );
-
-  //   this.gl.vertexAttribPointer(
-  //     this.attribLocations["vertexPosition"],
-  //     2,
-  //     this.gl.FLOAT,
-  //     false,
-  //     0,
-  //     0
-  //   );
-  //   this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
-  //   this.gl.drawArrays(this.gl.TRIANGLES, 0, bufferArray.length / 2);
-  // }
-
   public drawPolygon(polygon: PolygonGeometry){ 
     if (polygon.getLength() == 2){
       this.drawLine(new LineGeometry(polygon.firstPoint.x, polygon.firstPoint.y, polygon.lastPoint.x, polygon.lastPoint.y, polygon.getColorString()))
@@ -455,5 +423,114 @@ export default class GLHelper {
     // Bind position buffer and draw square
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
     this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
+  }
+
+  public moveObject(idxObject: number, oldPosition: Vertex2D, mousePosition: Vertex2D){
+    const deltaX = (mousePosition.x - oldPosition.x) * 0.1;
+    const deltaY = (mousePosition.y - oldPosition.y) * 0.1;
+    if (this.objects[idxObject].getType() == GeometryType.SQUARE){
+      const square = this.objects[idxObject] as SquareGeometry;
+      const oldCenter = square.getCenter();
+      square.setCenter({x: oldCenter.x + deltaX * 0.5, y: oldCenter.y + deltaY * 0.5});
+    } else if (this.objects[idxObject].getType() == GeometryType.POLYGON){
+      const polygon = this.objects[idxObject] as PolygonGeometry;
+      for (let j = 0; j < polygon.getLength(); j++){
+        polygon.movePoint(j, deltaX, deltaY);
+      }
+    }
+  }
+  
+  public getClickedObject(mousePosition: Vertex2D){
+    let nearestIdx = -999;
+    for (let i = 0; i < this.objects.length; i++){
+      let min = 9999;
+      if (this.objects[i].getType() == GeometryType.SQUARE){
+        const square = this.objects[i] as SquareGeometry;
+        let temp = euclideanDistance(mousePosition, square.getCenter());
+        min = temp;
+      } else if (this.objects[i].getType() == GeometryType.POLYGON){
+        const polygon = this.objects[i] as PolygonGeometry;
+        for (let j = 0; j < polygon.getLength(); j++){
+          let temp = euclideanDistance(mousePosition, polygon.getPoint(j));
+          if (temp <= min){
+            min = temp;
+          }
+          console.log(min);
+        }
+      }
+      if (min <= 0.4){
+        nearestIdx = i;
+        break;
+      }
+    }
+    if (nearestIdx == -999){
+      return null;
+    }
+    else {
+      return nearestIdx;
+    }
+
+  }
+
+  public moveVertex(idxObject: number, idxPoint: number, mousePosition: Vertex2D){
+    if (this.objects[idxObject].getType() == GeometryType.LINE){
+      const line = this.objects[idxObject] as LineGeometry;
+      if (idxPoint == 1){
+        line.setPoint1(mousePosition);
+      } else if (idxPoint == 2){
+        line.setPoint2(mousePosition);
+      }
+    } else if (this.objects[idxObject].getType() == GeometryType.POLYGON){
+      const polygon = this.objects[idxObject] as PolygonGeometry;
+      polygon.setPoint(idxPoint, mousePosition);
+    }
+  }
+
+  public vertexPicking(mousePosition: Vertex2D){
+    let nearestIdx = -999;
+    let nearestObject = -999;
+    for (let i = 0; i < this.objects.length; i++){
+      let min = 9999;
+      let j = 0;
+      if (this.objects[i].getType() == GeometryType.SQUARE){
+        // const square = this.objects[i] as SquareGeometry;
+        // let temp = euclideanDistance(mousePosition, square.getCenter());
+        // min = temp;
+      } else if (this.objects[i].getType() == GeometryType.POLYGON){
+        const polygon = this.objects[i] as PolygonGeometry;
+        for (j = 0; j < polygon.getLength(); j++){
+          let temp = euclideanDistance(mousePosition, polygon.getPoint(j));
+          if (temp <= min){
+            min = temp;
+            nearestIdx = j;
+          }
+          console.log(min);
+        }
+      }
+      else if (this.objects[i].getType() == GeometryType.LINE){
+        const line = this.objects[i] as LineGeometry;
+        let temp1 = euclideanDistance(mousePosition, line.getPoint1());
+        let temp2 = euclideanDistance(mousePosition, line.getPoint2());
+        if (temp1 <= min){
+          min = temp1;
+          nearestIdx = 1;
+        }
+        if (temp2 <= min){
+          min = temp2;
+          nearestIdx = 2;
+        }
+      }
+      if (min <= 0.02){
+        nearestObject = i;
+        break;
+      }
+    }
+    if ((nearestIdx == -999) || (nearestObject == -999)){
+      return [null, null];
+    }
+    else {
+      return [nearestIdx, nearestObject];
+    }
+
   }
 }

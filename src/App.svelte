@@ -19,6 +19,10 @@
   let drawnObject: BaseGeometry | null = null;
   let currentX = 0;
   let currentY = 0;
+  let oldPosition = { x: currentX, y: currentY };
+  let clickedObject: number | null = null;
+  let clickedIndex: number | null = null;
+  let firstTry = true;
   let isDrawing = false;
   let isPolygon = false;
   let finished = true;
@@ -40,7 +44,28 @@
       console.log('✏ Is drawing');
       isDrawing = true;
 
-      if (tools[toolIndex] === 'Color') {
+      if (tools[toolIndex] === 'Move') {
+        console.log('Move vertex');
+        if (firstTry) {
+          let vertexObject = glHelper.vertexPicking({
+            x: currentX,
+            y: currentY,
+          });
+          clickedIndex ??= vertexObject[0];
+          clickedObject ??= vertexObject[1];
+          console.log('asd ' + clickedIndex);
+          console.log('asd' + clickedObject);
+          // clickedObject ??= glHelper.getClickedObject({
+          //   x: currentX,
+          //   y: currentY,
+          // });
+        }
+        if (clickedObject != null && firstTry) {
+          firstTry = false;
+          // oldPosition = { x: currentX, y: currentY };
+        }
+        console.log(clickedObject);
+      } else if (tools[toolIndex] === 'Color') {
         //console.log("milih suatu object");
         //console.log(x);
         //console.log(y);
@@ -171,6 +196,18 @@
             polygon.setLastPoint({ x: currentX, y: currentY });
             isPolygon = true;
           }
+        } else if (tools[toolIndex] == 'Move') {
+          finished = true;
+          if (clickedObject != null && clickedIndex != null) {
+            // glHelper.moveObject(clickedObject, oldPosition, {
+            //   x: currentX,
+            //   y: currentY,
+            // });
+            glHelper.moveVertex(clickedObject, clickedIndex, {
+              x: currentX,
+              y: currentY,
+            });
+          }
         }
       }
     });
@@ -188,6 +225,10 @@
           glHelper.addObject(drawnObject as BaseGeometry);
           const polygon = drawnObject as PolygonGeometry;
           polygon.addPoint();
+        } else if (tools[toolIndex] == 'Move') {
+          firstTry = true;
+          clickedObject = null;
+          clickedIndex = null;
         }
       }
       drawnObject = null;

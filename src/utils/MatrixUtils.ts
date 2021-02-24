@@ -38,3 +38,10 @@ export const translateVertex = (
 export const createIdentityMatrix = () => {
   return [1, 0, 0, 0, 1, 0, 0, 0, 1];
 };
+
+export const euclideanDistance = (
+  P1: Vertex2D,
+  P2: Vertex2D
+) => {
+  return Math.sqrt(Math.pow(P2.x - P1.x, 2) + Math.pow(P2.y - P1.y, 2));
+}

@@ -153,6 +153,15 @@ export class PolygonGeometry extends BaseGeometry {
     console.log(this.length);
   }
 
+  public movePoint(idx: number, delX: number, delY: number) {
+    this.points[idx].x += delX;
+    this.points[idx].y += delY;
+  }
+
+  public setPoint(idx: number, mousePosition: Vertex2D){
+    this.points[idx] = mousePosition;
+  }
+
   public getLength(){
     return this.length;
   }
