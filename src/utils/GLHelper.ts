@@ -142,6 +142,7 @@ export default class GLHelper {
     }
 
     // Render currently drawn object
+    console.log(this.objects.length);
     this.drawnObject && this.drawObject(this.drawnObject);
   }
 
@@ -175,8 +176,10 @@ export default class GLHelper {
     return this.objects[this.objects.length - 1];
   }
 
-  public deleteLastObject(){
-    this.objects.pop();
+  public deleteTemporaryObject(times: number){
+    for (let i = 1; i <= times; i++){
+      this.objects.splice(this.objects.length - 1, 1);
+    }
   }
 
   public setColorObject(obj: BaseGeometry,color: string){
@@ -333,6 +336,7 @@ export default class GLHelper {
     }
     
     else if (polygon.getLength() >= 3){
+      this.drawLine(new LineGeometry(polygon.firstPoint.x, polygon.firstPoint.y, polygon.lastPoint.x, polygon.lastPoint.y, '#ffffff'))
       for (let i = 0; i < polygon.getLength() - 1; i++) {
         this.drawTriangle(polygon.getPoint(0).x,
           polygon.getPoint(0).y,
