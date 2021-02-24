@@ -1,19 +1,21 @@
 <script lang="typescript">
-  import { onMount } from 'svelte';
-  import VertexShader from './shader/SampleVertexShader.glsl';
-  import FragmentShader from './shader/SampleFragmentShader.glsl';
-  import GLHelper from './utils/GLHelper';
-  import ToolButton from './components/ToolButton.svelte';
-  import { GeometryType } from './models/GLModel';
+  import { onMount } from "svelte";
+  import VertexShader from "./shader/SampleVertexShader.glsl";
+  import FragmentShader from "./shader/SampleFragmentShader.glsl";
+  import GLHelper from "./utils/GLHelper";
+  import ToolButton from "./components/ToolButton.svelte";
+  import { GeometryType } from "./models/GLModel";
   import {
     BaseGeometry,
     LineGeometry,
     SquareGeometry,
     PolygonGeometry,
-  } from './utils/GLObjects';
+  } from "./utils/GLObjects";
+  import { downloadFile, readSingleFile } from "./utils/DownloadFile";
+  import { now } from "svelte/internal";
 
   // Define tool buttons
-  const tools = ['Move', 'Polygon', 'Line', 'Scale', 'Square', 'Color', 'Help'];
+  const tools = ["Move", "Polygon", "Line", "Scale", "Square", "Color", "Help"];
   let toolIndex = 0;
 
   let drawnObject: BaseGeometry | null = null;
@@ -22,25 +24,28 @@
   let isDrawing = false;
   let isPolygon = false;
   let finished = true;
-  let color = '#FFFFFF';
+  let color = "#FFFFFF";
+  let textareaValue = "";
+  let glHelperObject!: GLHelper;
 
   onMount(() => {
     // Get canvas
-    const canvas = document.getElementById('webgl-canvas') as HTMLCanvasElement;
+    const canvas = document.getElementById("webgl-canvas") as HTMLCanvasElement;
 
     // Instantiate GL helper object
     const glHelper = new GLHelper(canvas, VertexShader, FragmentShader);
+    glHelperObject = glHelper;
 
     // On mouse down, change is drawing status
-    canvas.addEventListener('mousedown', (event: MouseEvent) => {
+    canvas.addEventListener("mousedown", (event: MouseEvent) => {
       const bounding = canvas.getBoundingClientRect();
       const x = 2 * ((event.x - bounding.left) / bounding.width) - 1;
       const y = -2 * ((event.y - bounding.top) / bounding.height) + 1;
 
-      console.log('✏ Is drawing');
+      console.log("✏ Is drawing");
       isDrawing = true;
 
-      if (tools[toolIndex] === 'Color') {
+      if (tools[toolIndex] === "Color") {
         //console.log("milih suatu object");
         //console.log(x);
         //console.log(y);
@@ -51,7 +56,7 @@
 
         for (let i = 0; i < objects.length; i++) {
           object = objects[i];
-          console.log('iterasi' + i);
+          console.log("iterasi" + i);
 
           //If the object is square
           if (object.getType() == GeometryType.SQUARE) {
@@ -69,16 +74,16 @@
 
             //If point(x,y) inside square
             if (x >= x1 && x <= x2 && y >= y1 && y <= y2) {
-              console.log('poin didalem kotak');
+              console.log("poin didalem kotak");
               glHelper.setColorObject(object, color);
               break;
             } else {
-              console.log('poin diluar kotak');
+              console.log("poin diluar kotak");
             }
           } else if (object.getType() == GeometryType.LINE) {
             object = object as LineGeometry;
             console.log(object.getType());
-            console.log('masuk sini');
+            console.log("masuk sini");
             let a = Math.pow(
               Math.pow(object.getPoint1().x - x, 2) +
                 Math.pow(object.getPoint1().y - y, 2),
@@ -112,10 +117,10 @@
             }
 
             if (distance < 0.01) {
-              console.log('ganti warna garis');
+              console.log("ganti warna garis");
               glHelper.setColorObject(object, color);
             }
-            console.log('distance');
+            console.log("distance");
             console.log(distance);
           }
         }
@@ -123,7 +128,7 @@
     });
 
     // On mouse move, recalculate current mouse coordinate
-    canvas.addEventListener('mousemove', (event: MouseEvent) => {
+    canvas.addEventListener("mousemove", (event: MouseEvent) => {
       const bounding = canvas.getBoundingClientRect();
       const x = 2 * ((event.x - bounding.left) / bounding.width) - 1;
       const y = -2 * ((event.y - bounding.top) / bounding.height) + 1;
@@ -134,9 +139,9 @@
       // If currently is drawing...
       if (isDrawing) {
         // If square tool selected
-        if (tools[toolIndex] === 'Square') {
+        if (tools[toolIndex] === "Square") {
           finished = true;
-          console.log('draw sq');
+          console.log("draw sq");
           drawnObject ??= new SquareGeometry(currentX, currentY, color);
           const square = drawnObject as SquareGeometry;
           square.setSize(
@@ -145,9 +150,9 @@
               Math.abs(currentX - square.getCenter().x) * 2
             )
           );
-        } else if (tools[toolIndex] === 'Line') {
+        } else if (tools[toolIndex] === "Line") {
           finished = true;
-          console.log('draw line');
+          console.log("draw line");
           drawnObject ??= new LineGeometry(
             currentX,
             currentY,
@@ -157,15 +162,15 @@
           );
           const line = drawnObject as LineGeometry;
           line.setPoint2({ x: currentX, y: currentY });
-        } else if (tools[toolIndex] == 'Polygon') {
+        } else if (tools[toolIndex] == "Polygon") {
           if (finished == false) {
-            console.log('continue draw last polygon');
+            console.log("continue draw last polygon");
             drawnObject ??= glHelper.getLastObject();
             const polygon = drawnObject as PolygonGeometry;
             polygon.setLastPoint({ x: currentX, y: currentY });
           } else {
             finished = false;
-            console.log('draw polygon');
+            console.log("draw polygon");
             drawnObject ??= new PolygonGeometry(currentX, currentY, color);
             const polygon = drawnObject as PolygonGeometry;
             polygon.setLastPoint({ x: currentX, y: currentY });
@@ -176,15 +181,15 @@
     });
 
     // On mouse up, save drawn object to array
-    canvas.addEventListener('mouseup', () => {
+    canvas.addEventListener("mouseup", () => {
       if (isDrawing) {
-        console.log('✏ Stopped drawing');
+        console.log("✏ Stopped drawing");
         isDrawing = false;
-        if (tools[toolIndex] === 'Square') {
+        if (tools[toolIndex] === "Square") {
           glHelper.addObject(drawnObject as BaseGeometry);
-        } else if (tools[toolIndex] === 'Line') {
+        } else if (tools[toolIndex] === "Line") {
           glHelper.addObject(drawnObject as BaseGeometry);
-        } else if (tools[toolIndex] == 'Polygon') {
+        } else if (tools[toolIndex] == "Polygon") {
           glHelper.addObject(drawnObject as BaseGeometry);
           const polygon = drawnObject as PolygonGeometry;
           polygon.addPoint();
@@ -194,21 +199,21 @@
     });
 
     // Key combination events
-    document.addEventListener('keydown', (event) => {
-      if (event.ctrlKey && event.key === 'z') {
-        console.log('🔙 Undo');
+    document.addEventListener("keydown", (event) => {
+      if (event.ctrlKey && event.key === "z") {
+        console.log("🔙 Undo");
         glHelper.removeNewestObject();
       }
     });
 
     // Finished the make of polygon
-    document.addEventListener('keyup', function (e) {
+    document.addEventListener("keyup", function (e) {
       if (e.keyCode === 13 && isPolygon) {
         finished = true;
         const polygon = glHelper.getLastObject() as PolygonGeometry;
         glHelper.deleteTemporaryObject(polygon.getLength() - 3);
         isPolygon = false;
-        alert('Berhasil membuat polygon!');
+        alert("Berhasil membuat polygon!");
       }
     });
 
@@ -220,6 +225,14 @@
       window.requestAnimationFrame(requestAnimationFunction);
     };
     window.requestAnimationFrame(requestAnimationFunction);
+
+    document.getElementById("file-input")!.addEventListener("change", (e) =>
+      readSingleFile(e, (text: string) => {
+        console.log("asd");
+        textareaValue = text;
+        // glHelperObject.importObjects(text);
+      })()
+    );
   });
 </script>
 
@@ -276,6 +289,44 @@
       <p>1. Input the color that you want beside #000000 (e.g. : #FFFFFF)</p>
       <p>2. Click "Color" button</p>
       <p>3. Click the shape you want to change color</p>
+      <div class="flex p-2">
+        <div class="px-2">
+          <button
+            class="flex justify-center items-center rounded p-1 border border-gray-400 hover:bg-gray-200 cursor-pointer"
+            on:click={() => {
+              textareaValue = glHelperObject.exportObjects();
+            }}
+          >
+            Export
+          </button>
+        </div>
+        <div class="px-2">
+          <button
+            class="flex justify-center items-center rounded p-1 border border-gray-400 hover:bg-gray-200 cursor-pointer"
+            on:click={() => {
+              textareaValue = glHelperObject.exportObjects();
+              downloadFile(`${Date.now()}.json`, textareaValue);
+            }}
+          >
+            Export & Save
+          </button>
+        </div>
+        <div class="px-2">
+          <input type="file" id="file-input" />
+          <button
+            class="flex justify-center items-center rounded p-1 border border-gray-400 hover:bg-gray-200 cursor-pointer"
+            on:click={() => {
+              glHelperObject.importObjects(textareaValue);
+            }}
+          >
+            Import
+          </button>
+        </div>
+      </div>
+      <textarea
+        class="border border-gray-500 w-full p-2 overflow-y-scroll"
+        bind:value={textareaValue}
+      />
     </div>
   </div>
 </div>

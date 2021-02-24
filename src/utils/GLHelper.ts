@@ -1,5 +1,11 @@
 import { GeometryType, Vertex2D, Vertex2DArray } from "../models/GLModel";
-import { BaseGeometry, LineGeometry, SquareGeometry, PolygonGeometry } from "../utils/GLObjects";
+import {
+  BaseGeometry,
+  LineGeometry,
+  SquareGeometry,
+  PolygonGeometry,
+  StringifiedObject,
+} from "../utils/GLObjects";
 
 export default class GLHelper {
   private canvas!: HTMLCanvasElement;
@@ -42,6 +48,46 @@ export default class GLHelper {
     console.log("🌵 Setup done");
 
     // console.log("🌵 Drawing done");
+  }
+
+  public exportObjects() {
+    return JSON.stringify(this.objects);
+  }
+
+  public importObjects(objectString: string) {
+    this.objects = [];
+    const parsed = JSON.parse(objectString);
+    for (const obj of parsed) {
+      if (obj.type === GeometryType.SQUARE) {
+        this.objects.push(
+          new SquareGeometry(obj.center.x, obj.center.y, obj.color, obj.size)
+        );
+      } else if (obj.type === GeometryType.LINE) {
+        this.objects.push(
+          new LineGeometry(
+            obj.point1.x,
+            obj.point1.y,
+            obj.point2.x,
+            obj.point2.y,
+            obj.color
+          )
+        );
+      } else if (obj.type == GeometryType.POLYGON) {
+        const poly = new PolygonGeometry(
+          obj.points[0].x,
+          obj.points[0].y,
+          obj.color
+        );
+        for (let i = 1; i < obj.points.length; i++) {
+          poly.setLastPoint(obj.points[i]);
+          poly.addPoint();
+        }
+        this.objects.push(poly);
+        // this.drawPolygon(obj as PolygonGeometry);
+      }
+    }
+    console.log(this.objects);
+    // this.objects = JSON.parse(objectString);
   }
 
   /**
@@ -146,7 +192,7 @@ export default class GLHelper {
     }
 
     // Render currently drawn object
-    console.log(this.objects.length);
+    // console.log(this.objects.length);
     this.drawnObject && this.drawObject(this.drawnObject);
   }
 
@@ -176,31 +222,29 @@ export default class GLHelper {
     this.drawnObject = obj;
   }
 
-  public getLastObject(){
+  public getLastObject() {
     return this.objects[this.objects.length - 1];
   }
 
-  public deleteTemporaryObject(times: number){
-    for (let i = 1; i <= times; i++){
+  public deleteTemporaryObject(times: number) {
+    for (let i = 1; i <= times; i++) {
       this.objects.splice(this.objects.length - 1, 1);
     }
   }
 
-  public setColorObject(obj: BaseGeometry,color: string){
+  public setColorObject(obj: BaseGeometry, color: string) {
     const objectType = obj.getType();
-    if(objectType===GeometryType.SQUARE){
-      
-      console.log(color);
+    if (objectType === GeometryType.SQUARE) {
+      // console.log(color);
       obj.setColor(color);
       this.drawScene();
-    }
-    else if(objectType===GeometryType.LINE){
-      console.log("helloooo");
+    } else if (objectType === GeometryType.LINE) {
+      // console.log("helloooo");
       obj.setColor(color);
       this.drawScene();
     }
   }
-  
+
   /**
    * Render object on canvas; any geometric object in general
    * @param obj The object that is going to be rendered
@@ -211,7 +255,7 @@ export default class GLHelper {
       this.drawSquare(obj as SquareGeometry);
     } else if (objectType === GeometryType.LINE) {
       this.drawLine(obj as LineGeometry);
-    } else if (objectType == GeometryType.POLYGON){
+    } else if (objectType == GeometryType.POLYGON) {
       this.drawPolygon(obj as PolygonGeometry);
     }
     // switch (obj.getType()) {
@@ -329,22 +373,37 @@ export default class GLHelper {
   //   this.gl.drawArrays(this.gl.TRIANGLES, 0, bufferArray.length / 2);
   // }
 
-  public drawPolygon(polygon: PolygonGeometry){ 
-    if (polygon.getLength() == 2){
-      this.drawLine(new LineGeometry(polygon.firstPoint.x, polygon.firstPoint.y, polygon.lastPoint.x, polygon.lastPoint.y, polygon.getColorString()))
-    }
-    
-    else if (polygon.getLength() >= 3){
-      this.drawLine(new LineGeometry(polygon.firstPoint.x, polygon.firstPoint.y, polygon.lastPoint.x, polygon.lastPoint.y, polygon.getColorString()))
+  public drawPolygon(polygon: PolygonGeometry) {
+    if (polygon.getLength() == 2) {
+      this.drawLine(
+        new LineGeometry(
+          polygon.firstPoint.x,
+          polygon.firstPoint.y,
+          polygon.lastPoint.x,
+          polygon.lastPoint.y,
+          polygon.getColorString()
+        )
+      );
+    } else if (polygon.getLength() >= 3) {
+      this.drawLine(
+        new LineGeometry(
+          polygon.firstPoint.x,
+          polygon.firstPoint.y,
+          polygon.lastPoint.x,
+          polygon.lastPoint.y,
+          polygon.getColorString()
+        )
+      );
       for (let i = 0; i < polygon.getLength() - 1; i++) {
-        this.drawTriangle(polygon.getPoint(0).x,
+        this.drawTriangle(
+          polygon.getPoint(0).x,
           polygon.getPoint(0).y,
           polygon.getPoint(i).x,
           polygon.getPoint(i).y,
-          polygon.getPoint(i+1).x,
-          polygon.getPoint(i+1).y,
+          polygon.getPoint(i + 1).x,
+          polygon.getPoint(i + 1).y,
           polygon
-        )
+        );
       }
     }
   }
