@@ -21,6 +21,10 @@ export class BaseGeometry {
     return this.projectionMatrix;
   }
 
+  public setProjectionMatrix(projMat: number[]) {
+    this.projectionMatrix = projMat;
+  }
+
   public getType() {
     return this.type;
   }
@@ -73,9 +77,7 @@ export class SquareGeometry extends BaseGeometry {
     this.color = color;
   }
 
-  public setProjectionMatrix(projMat: number[]) {
-    this.projectionMatrix = projMat;
-  }
+  
 
   public getCenter() {
     return this.center;

@@ -14,8 +14,15 @@
   import { downloadFile, readSingleFile } from "./utils/DownloadFile";
   import { now } from "svelte/internal";
 
+  import Slider from '@fouita/slider';              
+  let value_x = 400;
+  let value_y = 400;
+  let value_r = 0;
+  let value_sx = 400;
+  let value_sy = 400;
+
   // Define tool buttons
-  const tools = ["Move", "Polygon", "Line", "Scale", "Square", "Color", "Help"];
+  const tools = ["Move","Transform", "Polygon", "Line", "Square", "Color","Help"];
   let toolIndex = 0;
 
   let drawnObject: BaseGeometry | null = null;
@@ -125,6 +132,86 @@
           }
         }
       }
+
+      if (tools[toolIndex] === "Transform") {
+          let objects = glHelper.getObjects();
+          console.log(objects);
+          
+          
+        
+          let object;
+
+          for(let i=0;i<=objects.length;i++){
+            if(i==objects.length){
+              object=null;
+              break;
+            }
+            object = objects[i];
+            //If the object is square
+              if(object.getType() == GeometryType.SQUARE){
+                let x1 = object.getCenter().x - 0.5 * object.getSize();
+                let y1 = object.getCenter().y - 0.5 * object.getSize();
+                let x2 = object.getCenter().x + 0.5 * object.getSize();
+                let y2 = object.getCenter().y + 0.5 * object.getSize();
+
+                //If point(x,y) inside square
+                if((x>=x1 && x<=x2)&&(y>=y1 && y<=y2)){
+                  console.log("poin didalem kotak");
+                  glHelper.setColorObject(object,color);
+                  break;
+                }
+                else{
+                  console.log("poin diluar kotak");
+                }
+                console.log(object.getCenter());
+              }
+              else if(object.getType() == GeometryType.LINE){
+                let a = Math.pow( Math.pow(object.getPoint1().x - x,2) + Math.pow(object.getPoint1().y - y,2) ,0.5)
+                let b = Math.pow( Math.pow(object.getPoint2().x - x,2) + Math.pow(object.getPoint2().y - y,2) ,0.5)
+                let c = Math.pow( Math.pow(object.getPoint1().x-object.getPoint2().x,2) + Math.pow(object.getPoint1().y - object.getPoint2().y,2),0.5)
+
+                let distance = 0;
+
+                if(Math.pow(b,2) > Math.pow(a,2) + Math.pow(c,2)){
+                  distance = a;
+                }
+                else if(Math.pow(a,2) > Math.pow(b,2) + Math.pow(c,2)){
+                  distance = b;
+                }
+                else{
+                  let s = (a+b+c)/2;
+                  distance = (2/c) * Math.pow(s*(s-a)*(s-b)*(s-c),0.5);
+                }
+
+                if(distance < 0.01){
+                  break;
+                }
+                console.log("distance");
+                console.log(distance);
+              }
+          }
+
+
+          if(object!=null){
+            console.log("minggir");
+          
+          
+            let translate_x = (value_x - 0) * (1 - (-1)) / (800 - 0) + (-1);
+            let translate_y = (value_y - 0) * (1 - (-1)) / (800 - 0) + (-1);
+            let scale_sx = (value_sx - 0) * (2 - 0) / (800 - 0) + 0;
+            let scale_sy = (value_sy - 0) * (2 - 0) / (800 - 0) + 0;
+            console.log(translate_x);
+            console.log(translate_y);
+            console.log(value_r);
+            console.log(scale_sx);
+            console.log(scale_sy);
+            
+            glHelper.setTransformObject(object,translate_x,translate_y,value_r,scale_sx,scale_sy);
+            console.log(object.getCenter());
+
+          }
+          
+        }
     });
 
     // On mouse move, recalculate current mouse coordinate
@@ -275,6 +362,19 @@
   <div class="p-2 w-full items-center justify-center flex flex-row ...">
     <canvas id="webgl-canvas" width="800" height="800" />
     <div class=" flex-auto m-2 h-full visible">
+      <div class="p-2 w-full h-full">
+        <p> Translate (X,Y)</p>
+          
+          <Slider class="mt-5 mx-6 m-5" tooltip=hover min={0} max={800} bind:value={value_x}/>
+        
+        <Slider class="mt-5 mx-6 m-5" tooltip=hover min={0} max={800} bind:value={value_y} />
+        <p> Rotate </p>
+        <Slider class="mt-5 mx-6 m-5" tooltip=hover min={0} max={360} bind:value={value_r} />
+
+        <p> Scale (X,Y)</p>
+        <Slider class="mt-5 mx-6 m-5" tooltip=hover min={0} max={800} bind:value={value_sx} />
+        <Slider class="mt-5 mx-6 m-5" tooltip=hover min={0} max={800} bind:value={value_sy} />
+      </div>
       <h1>HELP MENU</h1>
       <p class="font-bold">How to draw square :</p>
       <p>1. Input the color that you want beside #000000 (e.g. : #FFFFFF)</p>

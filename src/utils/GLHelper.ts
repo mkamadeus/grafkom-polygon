@@ -6,6 +6,7 @@ import {
   PolygonGeometry,
   StringifiedObject,
 } from "../utils/GLObjects";
+import { multiplyMatrix } from "./MatrixUtils";
 
 export default class GLHelper {
   private canvas!: HTMLCanvasElement;
@@ -244,6 +245,38 @@ export default class GLHelper {
       obj.setColor(color);
       this.drawScene();
     }
+  }
+  public setTransformObject(obj: BaseGeometry,x: number,y:number, r:number, sx:number, sy:number){
+
+    const [u,v] = [0,0];
+    const translateMat = [
+    1, 0, 0,
+    0, 1, 0,
+    x, y, 1
+    ]
+    let degrees = r;
+    const rad = degrees * Math.PI / 180;
+    const sin = Math.sin(rad)
+    const cos = Math.cos(rad)
+    const rotationMat = [
+    cos, -sin, 0,
+    sin, cos, 0,
+    0, 0, 1
+    ]
+    const [k1, k2] = [sx,sy]
+    const scaleMat = [
+    k1, 0, 0,
+    0, k2, 0,
+    0, 0, 1
+    ]
+    
+
+    const transform = multiplyMatrix(multiplyMatrix(rotationMat,scaleMat),translateMat);
+    console.log(transform);
+    console.log(multiplyMatrix(obj.getProjectionMatrix(),scaleMat));
+    obj.setProjectionMatrix(multiplyMatrix(obj.getProjectionMatrix(),transform))
+    this.drawScene();
+    console.log(obj.getProjectionMatrix());
   }
 
   /**
