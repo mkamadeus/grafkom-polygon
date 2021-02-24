@@ -207,6 +207,8 @@
             console.log(scale_sy);
             
             glHelper.setTransformObject(object,translate_x,translate_y,value_r,scale_sx,scale_sy);
+            
+
             console.log(object.getCenter());
 
           }
@@ -385,10 +387,27 @@
       <p>2. Click "Line" button</p>
       <p>3. Drag on canvas depend on the length</p>
 
+      <p class="font-bold">How to draw polygon :</p>
+      <p>1. Input the color that you want beside #000000 (e.g. : #FFFFFF)</p>
+      <p>2. Click "Polygon" button</p>
+      <p>3. Drag on canvas</p>
+      <p>4. Drag again if you want to add sides </p>
+      <p>5. Click enter if you finish drawing your polygon </p>
+
       <p class="font-bold">How to change color of shape :</p>
       <p>1. Input the color that you want beside #000000 (e.g. : #FFFFFF)</p>
       <p>2. Click "Color" button</p>
       <p>3. Click the shape you want to change color</p>
+
+
+      <p class="font-bold">How to transform shape :</p>
+      <p>1. Input the transform value (X and Y) with slider</p>
+      <p>2. Input the rotation degree with slider</p>
+      <p>3. Input the scale value (X and Y) with slider</p>
+      <p>3. Click "Transform"</p>
+      <p>3. Choose object you want to transform</p>
+
+
       <div class="flex p-2">
         <div class="px-2">
           <button
