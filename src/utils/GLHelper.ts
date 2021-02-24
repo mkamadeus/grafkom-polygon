@@ -175,6 +175,10 @@ export default class GLHelper {
     return this.objects[this.objects.length - 1];
   }
 
+  public deleteLastObject(){
+    this.objects.pop();
+  }
+
   public setColorObject(obj: BaseGeometry,color: string){
     const objectType = obj.getType();
     if(objectType===GeometryType.SQUARE){

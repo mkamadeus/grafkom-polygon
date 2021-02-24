@@ -135,6 +135,7 @@
       if (isDrawing) {
         // If square tool selected
         if (tools[toolIndex] === 'Square') {
+          finished == true;
           console.log('draw sq');
           drawnObject ??= new SquareGeometry(currentX, currentY, color);
           const square = drawnObject as SquareGeometry;
@@ -145,6 +146,7 @@
             )
           );
         } else if (tools[toolIndex] === 'Line') {
+          finished == false;
           console.log('draw line');
           drawnObject ??= new LineGeometry(
             currentX,
@@ -159,6 +161,7 @@
           if (finished == false) {
             console.log('continue last polygon');
             drawnObject ??= glHelper.getLastObject();
+            glHelper.deleteLastObject();
             const polygon = drawnObject as PolygonGeometry;
             polygon.setLastPoint({ x: currentX, y: currentY });
           } else {
@@ -198,9 +201,11 @@
       }
     });
 
+    // Finished the make of polygon
     document.addEventListener('keyup', function (e) {
       if (e.keyCode === 13) {
         finished = true;
+        alert('Berhasil membuat polygon!');
       }
     });
 
