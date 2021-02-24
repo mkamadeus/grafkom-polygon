@@ -95,10 +95,6 @@ export class SquareGeometry extends BaseGeometry {
     this.size = size;
   }
 
-  // public setColor(color : string){
-  //   this.color = color;
-  // }
-
   public convertToPoints() {}
 }
 

@@ -25,21 +25,6 @@ export const multiplyMatrix = (mat1: number[], mat2: number[]) => {
 return result;
 };
 
-// export const translateVertex = (
-//   vertex: Vertex2D,
-//   dx: number,
-//   dy: number
-// ): Vertex2D => {
-//   const translationMatrix = [
-//     [1, 0, dx],
-//     [0, 1, dy],
-//     [0, 0, 1],
-//   ];
-//   const vertexMatrix = [[vertex.x], [vertex.y], [1]];
-//   const resultMatrix = multiplyMatrix(translationMatrix, vertexMatrix);
-//   return { x: resultMatrix[0][0], y: resultMatrix[1][0] };
-// };
-
 export const createIdentityMatrix = () => {
   return [1, 0, 0, 0, 1, 0, 0, 0, 1];
 };

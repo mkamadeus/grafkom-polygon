@@ -214,8 +214,6 @@
         }
 
         if (object != null) {
-          console.log('minggir');
-
           let translate_x = ((value_x - 0) * (1 - -1)) / (800 - 0) + -1;
           let translate_y = ((value_y - 0) * (1 - -1)) / (800 - 0) + -1;
           let scale_sx = ((value_sx - 0) * (2 - 0)) / (800 - 0) + 0;
@@ -399,7 +397,7 @@
     <input class="p-1 rounded border border-gray-400" bind:value={color} />
   </div>
 
-  <div class="p-2 w-full items-center justify-center flex flex-row ...">
+  <div class="p-2 w-full items-start justify-center flex flex-row ...">
     <canvas id="webgl-canvas" width="800" height="800" />
     <div class=" flex-auto m-2 h-full visible">
       <div class="p-2 w-full h-full">
@@ -460,7 +458,7 @@
       <p>2. Click "Polygon" button</p>
       <p>3. Drag on canvas</p>
       <p>4. Drag again if you want to add sides</p>
-      <p>5. Click enter if you finish drawing your polygon</p>
+      <p>5. Click <i><b>enter</b></i> if you finish drawing your polygon</p>
 
       <p class="font-bold">How to change color of shape :</p>
       <p>1. Input the color that you want beside #000000 (e.g. : #FFFFFF)</p>

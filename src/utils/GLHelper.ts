@@ -143,10 +143,6 @@ export default class GLHelper {
     // Link the shader program with the canvas
     this.gl.linkProgram(this.shaderProgram);
 
-    // this.gl.viewport(0,0, this.gl.canvas.width, this.gl.canvas.height)
-    // const u_resolution = this.gl.getUniformLocation(this.shaderProgram, 'u_resolution')
-    // this.gl.uniform2f(u_resolution, this.gl.canvas.width, this.gl.canvas.height)
-
     // Verify whether program linking successful
     if (!this.gl.getProgramParameter(this.shaderProgram, this.gl.LINK_STATUS)) {
       alert("Program failed to link.");
@@ -476,54 +472,10 @@ export default class GLHelper {
     this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
   }
 
-  public moveObject(idxObject: number, oldPosition: Vertex2D, mousePosition: Vertex2D){
-    const deltaX = (mousePosition.x - oldPosition.x) * 0.1;
-    const deltaY = (mousePosition.y - oldPosition.y) * 0.1;
-    if (this.objects[idxObject].getType() == GeometryType.SQUARE){
-      const square = this.objects[idxObject] as SquareGeometry;
-      const oldCenter = square.getCenter();
-      square.setCenter({x: oldCenter.x + deltaX * 0.5, y: oldCenter.y + deltaY * 0.5});
-    } else if (this.objects[idxObject].getType() == GeometryType.POLYGON){
-      const polygon = this.objects[idxObject] as PolygonGeometry;
-      for (let j = 0; j < polygon.getLength(); j++){
-        polygon.movePoint(j, deltaX, deltaY);
-      }
-    }
-  }
-  
-  public getClickedObject(mousePosition: Vertex2D){
-    let nearestIdx = -999;
-    for (let i = 0; i < this.objects.length; i++){
-      let min = 9999;
-      if (this.objects[i].getType() == GeometryType.SQUARE){
-        const square = this.objects[i] as SquareGeometry;
-        let temp = euclideanDistance(mousePosition, square.getCenter());
-        min = temp;
-      } else if (this.objects[i].getType() == GeometryType.POLYGON){
-        const polygon = this.objects[i] as PolygonGeometry;
-        for (let j = 0; j < polygon.getLength(); j++){
-          let temp = euclideanDistance(mousePosition, polygon.getPoint(j));
-          if (temp <= min){
-            min = temp;
-          }
-          console.log(min);
-        }
-      }
-      if (min <= 0.4){
-        nearestIdx = i;
-        break;
-      }
-    }
-    if (nearestIdx == -999){
-      return null;
-    }
-    else {
-      return nearestIdx;
-    }
-
-  }
-
   public moveVertex(idxObject: number, idxPoint: number, mousePosition: Vertex2D){
+    if (this.objects[idxObject].getType() == GeometryType.SQUARE){
+      // belum diimplementasikan
+    } 
     if (this.objects[idxObject].getType() == GeometryType.LINE){
       const line = this.objects[idxObject] as LineGeometry;
       if (idxPoint == 1){
@@ -544,9 +496,7 @@ export default class GLHelper {
       let min = 9999;
       let j = 0;
       if (this.objects[i].getType() == GeometryType.SQUARE){
-        // const square = this.objects[i] as SquareGeometry;
-        // let temp = euclideanDistance(mousePosition, square.getCenter());
-        // min = temp;
+        // belum diimplementasikan
       } else if (this.objects[i].getType() == GeometryType.POLYGON){
         const polygon = this.objects[i] as PolygonGeometry;
         for (j = 0; j < polygon.getLength(); j++){
