@@ -1,6 +1,12 @@
 import { GeometryType, Vertex2D } from "../models/GLModel";
 import { createIdentityMatrix } from "../utils/MatrixUtils";
 
+export interface StringifiedObject {
+  projectionMatrix: number[];
+  color: string;
+  type: number;
+}
+
 export class BaseGeometry {
   protected type!: GeometryType;
   protected projectionMatrix: number[];
@@ -13,6 +19,10 @@ export class BaseGeometry {
 
   public getProjectionMatrix() {
     return this.projectionMatrix;
+  }
+
+  public setProjectionMatrix(projMat: number[]) {
+    this.projectionMatrix = projMat;
   }
 
   public getType() {
@@ -45,7 +55,7 @@ export class BaseGeometry {
     return;
   }
 
-  public setColor(color:string){
+  public setColor(color: string) {
     this.color = color;
   }
 }
@@ -66,6 +76,8 @@ export class SquareGeometry extends BaseGeometry {
     this.size = size;
     this.color = color;
   }
+
+  
 
   public getCenter() {
     return this.center;
@@ -94,12 +106,16 @@ export class LineGeometry extends BaseGeometry {
   private point1: Vertex2D;
   private point2: Vertex2D;
 
-  constructor(x1: number, y1: number, x2: number, y2: number, color:string) {
+  constructor(x1: number, y1: number, x2: number, y2: number, color: string) {
     super();
     this.type = GeometryType.LINE;
     this.point1 = { x: x1, y: y1 };
     this.point2 = { x: x2, y: y2 };
-    this.color =  color;
+    this.color = color;
+  }
+
+  public setProjectionMatrix(projMat: number[]) {
+    this.projectionMatrix = projMat;
   }
 
   public getPoint1() {
@@ -120,7 +136,7 @@ export class LineGeometry extends BaseGeometry {
 }
 
 export class PolygonGeometry extends BaseGeometry {
-  private points: Vertex2D [];
+  private points: Vertex2D[];
   private length: number;
   public firstPoint: Vertex2D;
   public lastPoint: Vertex2D;
@@ -131,15 +147,19 @@ export class PolygonGeometry extends BaseGeometry {
     this.color = color;
     this.points = [];
     this.length = 0;
-    this.firstPoint = {x: x1, y:y1};
+    this.firstPoint = { x: x1, y: y1 };
     this.points.push(this.firstPoint);
     this.length += 1;
-    this.lastPoint = {x: x1, y:y1};
+    this.lastPoint = { x: x1, y: y1 };
     this.addPoint();
   }
 
   public getPoint(idx: number) {
     return this.points[idx];
+  }
+
+  public setProjectionMatrix(projMat: number[]) {
+    this.projectionMatrix = projMat;
   }
 
   public addPoint() {
@@ -148,8 +168,8 @@ export class PolygonGeometry extends BaseGeometry {
     this.firstPoint = this.lastPoint;
   }
 
-  public setLastPoint(point: Vertex2D){
-    this.lastPoint = ({ ...point});
+  public setLastPoint(point: Vertex2D) {
+    this.lastPoint = { ...point };
     console.log(this.length);
   }
 

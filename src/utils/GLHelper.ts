@@ -1,6 +1,6 @@
 import { GeometryType, Vertex2D, Vertex2DArray } from "../models/GLModel";
 import { BaseGeometry, LineGeometry, SquareGeometry, PolygonGeometry } from "../utils/GLObjects";
-import { euclideanDistance } from "../utils/MatrixUtils";
+import { euclideanDistance, multiplyMatrix } from "../utils/MatrixUtils";
 
 export default class GLHelper {
   private canvas!: HTMLCanvasElement;
@@ -41,8 +41,49 @@ export default class GLHelper {
     this.setupProgram();
     this.setupDraw();
     console.log("🌵 Setup done");
+  }
 
-    // console.log("🌵 Drawing done");
+  public exportObjects() {
+    return JSON.stringify(this.objects);
+  }
+
+  public importObjects(objectString: string) {
+    this.objects = [];
+    const parsed = JSON.parse(objectString);
+    for (const obj of parsed) {
+      if (obj.type === GeometryType.SQUARE) {
+        const square = new SquareGeometry(
+          obj.center.x,
+          obj.center.y,
+          obj.color,
+          obj.size
+        );
+        square.setProjectionMatrix(obj.projectionMatrix);
+        this.objects.push(square);
+      } else if (obj.type === GeometryType.LINE) {
+        const line = new LineGeometry(
+          obj.point1.x,
+          obj.point1.y,
+          obj.point2.x,
+          obj.point2.y,
+          obj.color
+        );
+        line.setProjectionMatrix(obj.projectionMatrix);
+        this.objects.push(line);
+      } else if (obj.type == GeometryType.POLYGON) {
+        const poly = new PolygonGeometry(
+          obj.points[0].x,
+          obj.points[0].y,
+          obj.color
+        );
+        for (let i = 1; i < obj.points.length; i++) {
+          poly.setLastPoint(obj.points[i]);
+          poly.addPoint();
+        }
+        poly.setProjectionMatrix(obj.projectionMatrix);
+        this.objects.push(poly);
+      }
+    }
   }
 
   /**
@@ -147,7 +188,7 @@ export default class GLHelper {
     }
 
     // Render currently drawn object
-    console.log(this.objects.length);
+    // console.log(this.objects.length);
     this.drawnObject && this.drawObject(this.drawnObject);
   }
 
@@ -177,31 +218,61 @@ export default class GLHelper {
     this.drawnObject = obj;
   }
 
-  public getLastObject(){
+  public getLastObject() {
     return this.objects[this.objects.length - 1];
   }
 
-  public deleteTemporaryObject(times: number){
-    for (let i = 1; i <= times; i++){
+  public deleteTemporaryObject(times: number) {
+    for (let i = 1; i <= times; i++) {
       this.objects.splice(this.objects.length - 1, 1);
     }
   }
 
-  public setColorObject(obj: BaseGeometry,color: string){
+  public setColorObject(obj: BaseGeometry, color: string) {
     const objectType = obj.getType();
-    if(objectType===GeometryType.SQUARE){
-      
-      console.log(color);
+    if (objectType === GeometryType.SQUARE) {
+      // console.log(color);
       obj.setColor(color);
       this.drawScene();
-    }
-    else if(objectType===GeometryType.LINE){
-      console.log("helloooo");
+    } else if (objectType === GeometryType.LINE) {
+      // console.log("helloooo");
       obj.setColor(color);
       this.drawScene();
     }
   }
-  
+  public setTransformObject(obj: BaseGeometry,x: number,y:number, r:number, sx:number, sy:number){
+
+    const [u,v] = [0,0];
+    const translateMat = [
+    1, 0, 0,
+    0, 1, 0,
+    x, y, 1
+    ]
+    let degrees = r;
+    const rad = degrees * Math.PI / 180;
+    const sin = Math.sin(rad)
+    const cos = Math.cos(rad)
+    const rotationMat = [
+    cos, -sin, 0,
+    sin, cos, 0,
+    0, 0, 1
+    ]
+    const [k1, k2] = [sx,sy]
+    const scaleMat = [
+    k1, 0, 0,
+    0, k2, 0,
+    0, 0, 1
+    ]
+    
+
+    const transform = multiplyMatrix(multiplyMatrix(rotationMat,scaleMat),translateMat);
+    console.log(transform);
+    console.log(multiplyMatrix(obj.getProjectionMatrix(),scaleMat));
+    obj.setProjectionMatrix(multiplyMatrix(obj.getProjectionMatrix(),transform))
+    this.drawScene();
+    console.log(obj.getProjectionMatrix());
+  }
+
   /**
    * Render object on canvas; any geometric object in general
    * @param obj The object that is going to be rendered
@@ -212,45 +283,10 @@ export default class GLHelper {
       this.drawSquare(obj as SquareGeometry);
     } else if (objectType === GeometryType.LINE) {
       this.drawLine(obj as LineGeometry);
-    } else if (objectType == GeometryType.POLYGON){
+    } else if (objectType == GeometryType.POLYGON) {
       this.drawPolygon(obj as PolygonGeometry);
     }
-    // switch (obj.getType()) {
-    //   case GeometryType.SQUARE:
-    //     console.log("sq");
-    //   case GeometryType.LINE:
-    //     console.log("line");
-    //   default:
-    //     return;
-    // }
   }
-
-  // public drawRectangle(p1: Vertex2D, p2: Vertex2D) {
-  //   const positionBuffer = this.gl.createBuffer();
-  //   const x1 = p1.x;
-  //   const y1 = p1.y;
-  //   const x2 = p2.x;
-  //   const y2 = p2.y;
-
-  //   this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
-  //   this.gl.bufferData(
-  //     this.gl.ARRAY_BUFFER,
-  //     new Float32Array([x1, y1, x2, y1, x1, y2, x1, y2, x2, y1, x2, y2]),
-  //     this.gl.STATIC_DRAW
-  //   );
-
-  //   this.gl.vertexAttribPointer(
-  //     this.attribLocations["vertexPosition"],
-  //     2,
-  //     this.gl.FLOAT,
-  //     false,
-  //     0,
-  //     0
-  //   );
-
-  //   this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
-  //   this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
-  // }
 
   public drawTriangle(
     x1: number,
@@ -297,22 +333,37 @@ export default class GLHelper {
     this.gl.drawArrays(this.gl.TRIANGLES, 0, 3);
   }
 
-  public drawPolygon(polygon: PolygonGeometry){ 
-    if (polygon.getLength() == 2){
-      this.drawLine(new LineGeometry(polygon.firstPoint.x, polygon.firstPoint.y, polygon.lastPoint.x, polygon.lastPoint.y, polygon.getColorString()))
-    }
-    
-    else if (polygon.getLength() >= 3){
-      this.drawLine(new LineGeometry(polygon.firstPoint.x, polygon.firstPoint.y, polygon.lastPoint.x, polygon.lastPoint.y, polygon.getColorString()))
+  public drawPolygon(polygon: PolygonGeometry) {
+    if (polygon.getLength() == 2) {
+      this.drawLine(
+        new LineGeometry(
+          polygon.firstPoint.x,
+          polygon.firstPoint.y,
+          polygon.lastPoint.x,
+          polygon.lastPoint.y,
+          polygon.getColorString()
+        )
+      );
+    } else if (polygon.getLength() >= 3) {
+      this.drawLine(
+        new LineGeometry(
+          polygon.firstPoint.x,
+          polygon.firstPoint.y,
+          polygon.lastPoint.x,
+          polygon.lastPoint.y,
+          polygon.getColorString()
+        )
+      );
       for (let i = 0; i < polygon.getLength() - 1; i++) {
-        this.drawTriangle(polygon.getPoint(0).x,
+        this.drawTriangle(
+          polygon.getPoint(0).x,
           polygon.getPoint(0).y,
           polygon.getPoint(i).x,
           polygon.getPoint(i).y,
-          polygon.getPoint(i+1).x,
-          polygon.getPoint(i+1).y,
+          polygon.getPoint(i + 1).x,
+          polygon.getPoint(i + 1).y,
           polygon
-        )
+        );
       }
     }
   }
