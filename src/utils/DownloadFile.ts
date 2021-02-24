@@ -15,16 +15,16 @@ export const downloadFile = (filename: string, text: string) => {
   }
 };
 
-export const readSingleFile = (e, cb) => {
+export const readSingleFile = (e: Event, cb: (e: string) => void) => {
   return () => {
-    const file = e.target.files[0];
+    const file = e.target!.files[0];
     if (!file) {
       return;
     }
     const reader = new FileReader();
-    reader.onload = function (e) {
-      const contents = e.target.result;
-      cb(contents);
+    reader.onload = function (e: ProgressEvent<FileReader>) {
+      const contents = e.target!.result;
+      cb(contents as string);
     };
     reader.readAsText(file);
   };
