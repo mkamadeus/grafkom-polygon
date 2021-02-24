@@ -46,8 +46,6 @@ export default class GLHelper {
     this.setupProgram();
     this.setupDraw();
     console.log("🌵 Setup done");
-
-    // console.log("🌵 Drawing done");
   }
 
   public exportObjects() {
@@ -59,19 +57,24 @@ export default class GLHelper {
     const parsed = JSON.parse(objectString);
     for (const obj of parsed) {
       if (obj.type === GeometryType.SQUARE) {
-        this.objects.push(
-          new SquareGeometry(obj.center.x, obj.center.y, obj.color, obj.size)
+        const square = new SquareGeometry(
+          obj.center.x,
+          obj.center.y,
+          obj.color,
+          obj.size
         );
+        square.setProjectionMatrix(obj.projectionMatrix);
+        this.objects.push(square);
       } else if (obj.type === GeometryType.LINE) {
-        this.objects.push(
-          new LineGeometry(
-            obj.point1.x,
-            obj.point1.y,
-            obj.point2.x,
-            obj.point2.y,
-            obj.color
-          )
+        const line = new LineGeometry(
+          obj.point1.x,
+          obj.point1.y,
+          obj.point2.x,
+          obj.point2.y,
+          obj.color
         );
+        line.setProjectionMatrix(obj.projectionMatrix);
+        this.objects.push(line);
       } else if (obj.type == GeometryType.POLYGON) {
         const poly = new PolygonGeometry(
           obj.points[0].x,
@@ -82,12 +85,10 @@ export default class GLHelper {
           poly.setLastPoint(obj.points[i]);
           poly.addPoint();
         }
+        poly.setProjectionMatrix(obj.projectionMatrix);
         this.objects.push(poly);
-        // this.drawPolygon(obj as PolygonGeometry);
       }
     }
-    console.log(this.objects);
-    // this.objects = JSON.parse(objectString);
   }
 
   /**
@@ -258,42 +259,7 @@ export default class GLHelper {
     } else if (objectType == GeometryType.POLYGON) {
       this.drawPolygon(obj as PolygonGeometry);
     }
-    // switch (obj.getType()) {
-    //   case GeometryType.SQUARE:
-    //     console.log("sq");
-    //   case GeometryType.LINE:
-    //     console.log("line");
-    //   default:
-    //     return;
-    // }
   }
-
-  // public drawRectangle(p1: Vertex2D, p2: Vertex2D) {
-  //   const positionBuffer = this.gl.createBuffer();
-  //   const x1 = p1.x;
-  //   const y1 = p1.y;
-  //   const x2 = p2.x;
-  //   const y2 = p2.y;
-
-  //   this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
-  //   this.gl.bufferData(
-  //     this.gl.ARRAY_BUFFER,
-  //     new Float32Array([x1, y1, x2, y1, x1, y2, x1, y2, x2, y1, x2, y2]),
-  //     this.gl.STATIC_DRAW
-  //   );
-
-  //   this.gl.vertexAttribPointer(
-  //     this.attribLocations["vertexPosition"],
-  //     2,
-  //     this.gl.FLOAT,
-  //     false,
-  //     0,
-  //     0
-  //   );
-
-  //   this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
-  //   this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
-  // }
 
   public drawTriangle(
     x1: number,
@@ -339,39 +305,6 @@ export default class GLHelper {
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
     this.gl.drawArrays(this.gl.TRIANGLES, 0, 3);
   }
-
-  // public drawPolygon(vertices: Vertex2DArray) {
-  //   if (vertices.length <= 2) throw new Error("woi ngaco");
-
-  //   const bufferArray = [];
-  //   for (let i = 1; i < vertices.length - 1; i++) {
-  //     bufferArray.push(vertices[0].x);
-  //     bufferArray.push(vertices[0].y);
-  //     bufferArray.push(vertices[i].x);
-  //     bufferArray.push(vertices[i].y);
-  //     bufferArray.push(vertices[i + 1].x);
-  //     bufferArray.push(vertices[i + 1].y);
-  //   }
-
-  //   const positionBuffer = this.gl.createBuffer();
-  //   this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
-  //   this.gl.bufferData(
-  //     this.gl.ARRAY_BUFFER,
-  //     new Float32Array(bufferArray),
-  //     this.gl.STATIC_DRAW
-  //   );
-
-  //   this.gl.vertexAttribPointer(
-  //     this.attribLocations["vertexPosition"],
-  //     2,
-  //     this.gl.FLOAT,
-  //     false,
-  //     0,
-  //     0
-  //   );
-  //   this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
-  //   this.gl.drawArrays(this.gl.TRIANGLES, 0, bufferArray.length / 2);
-  // }
 
   public drawPolygon(polygon: PolygonGeometry) {
     if (polygon.getLength() == 2) {

@@ -73,6 +73,10 @@ export class SquareGeometry extends BaseGeometry {
     this.color = color;
   }
 
+  public setProjectionMatrix(projMat: number[]) {
+    this.projectionMatrix = projMat;
+  }
+
   public getCenter() {
     return this.center;
   }
@@ -106,6 +110,10 @@ export class LineGeometry extends BaseGeometry {
     this.point1 = { x: x1, y: y1 };
     this.point2 = { x: x2, y: y2 };
     this.color = color;
+  }
+
+  public setProjectionMatrix(projMat: number[]) {
+    this.projectionMatrix = projMat;
   }
 
   public getPoint1() {
@@ -146,6 +154,10 @@ export class PolygonGeometry extends BaseGeometry {
 
   public getPoint(idx: number) {
     return this.points[idx];
+  }
+
+  public setProjectionMatrix(projMat: number[]) {
+    this.projectionMatrix = projMat;
   }
 
   public addPoint() {

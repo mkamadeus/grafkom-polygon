@@ -311,7 +311,7 @@
             Export & Save
           </button>
         </div>
-        <div class="px-2">
+        <div class="flex px-2">
           <input type="file" id="file-input" />
           <button
             class="flex justify-center items-center rounded p-1 border border-gray-400 hover:bg-gray-200 cursor-pointer"
